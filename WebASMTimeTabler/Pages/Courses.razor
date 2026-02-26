@@ -16,11 +16,11 @@
     <input type="text" 
             class="form-control" 
             placeholder="과목명, 교수명, 과목번호로 검색" 
-            value="@searchTerm" 
+            value="@StateService.SearchTerm" 
             @oninput="OnSearchTermChanged" />
 
 </div>
-@if (courses == null)
+@if (StateService.AllCourses == null)
 {
     <p><em>Loading...</em></p>
 }
@@ -87,18 +87,14 @@ else
 @code {
 
     
-    private Course[]? courses;
     private bool debounceFlag = true;
 
     //검색 기능 및 필터링
-    private string searchTerm = string.Empty;
 
     private IList<Course> filteredCourses = new List<Course>();
-    private const int batchSize = 50;
     private async Task OnSearchTermChanged(ChangeEventArgs e)
     {
-        searchTerm = e.Value?.ToString() ?? string.Empty;
-
+        StateService.SearchTerm = e.Value?.ToString() ?? string.Empty;
         bool currentFlag = debounceFlag = !debounceFlag; // true/false 번갈아 저장
         await Task.Delay(100); // 300ms 대기
 
@@ -109,18 +105,17 @@ else
     }
     private void ApplyFilter()
     {
-        filteredCourses.Clear();
+        if (StateService.AllCourses == null) return;
 
-        var list = string.IsNullOrWhiteSpace(searchTerm)
-            ? courses ?? Array.Empty<Course>()
-            : (courses ?? Array.Empty<Course>()).Where(c =>
-                (c.Name?.Contains(searchTerm, StringComparison.OrdinalIgnoreCase) ?? false) ||
-                (c.Professor?.Contains(searchTerm, StringComparison.OrdinalIgnoreCase) ?? false) ||
-                (c.ClassNumber?.Contains(searchTerm, StringComparison.OrdinalIgnoreCase) ?? false));
+        var term = StateService.SearchTerm;
+        var list = string.IsNullOrWhiteSpace(term)
+            ? StateService.AllCourses
+            : StateService.AllCourses.Where(c => 
+                c.Name.Contains(term, StringComparison.OrdinalIgnoreCase) || 
+                c.Professor.Contains(term, StringComparison.OrdinalIgnoreCase) ||
+                c.ClassNumber.Contains(term, StringComparison.OrdinalIgnoreCase));
 
-        foreach (var c in list)
-            filteredCourses.Add(c);
-
+        filteredCourses = list.ToList();
         StateHasChanged();
     }
 
@@ -134,15 +129,14 @@ else
     private void SelectAllFiltered()
     {
         foreach (var c in filteredCourses)
-            if(!StateService.IsSelected(c)) StateService.SelectedCourses.Add(c);
-        //selectedCourses.UnionWith(filteredCourses);
+            if(!StateService.IsSelected(c)) StateService.ToggleCourse(c);
         StateHasChanged();
     }
 
     private void DeselectAllFiltered()
     {
         foreach(var course in filteredCourses)
-            if(StateService.IsSelected(course)) StateService.SelectedCourses.Remove(course);
+            if(StateService.IsSelected(course)) StateService.ToggleCourse(course);
         StateHasChanged();
     }
 
@@ -155,11 +149,11 @@ else
     protected override async Task OnInitializedAsync()
     {
         // courses가 null일 때만 데이터를 로드 (최초 1회)
-        if (courses == null)
+        if (StateService.AllCourses == null)
         {
             try
             {
-                courses = await Http.GetFromJsonAsync<Course[]>("sample-data/courses.json");
+                StateService.AllCourses = await Http.GetFromJsonAsync<Course[]>("sample-data/courses.json");
                 ApplyFilter();
             }
             catch (Exception ex)
@@ -175,7 +169,6 @@ else
         }
     }
 
-    //private HashSet<Course> selectedCourses = new HashSet<Course>(new CourseComparer());
     private void ToggleCourse(Course course)
     {
         StateService.ToggleCourse(course);
@@ -186,7 +179,6 @@ else
 
     private void GoToTimeTabler()
     {
-        //StateService.SetSelectedCourses(selectedCourses.ToList());
         NavManager.NavigateTo("/timetable");
     }
 }

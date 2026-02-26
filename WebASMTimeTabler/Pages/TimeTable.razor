@@ -12,35 +12,35 @@
         
         <h6>실시간 필터 (Realtime)</h6>
         <div class="form-check">
-            <input type="checkbox" class="form-check-input" @bind="useLunchBreak">
+            <input type="checkbox" class="form-check-input" @bind="StateService.useLunchBreak">
             <label class="form-check-label">점심시간 공강 (12:00-13:00)</label>
         </div>
 
         <div class="form-check">
-            <input type="checkbox" class="form-check-input" @bind="useMorningFilter">
+            <input type="checkbox" class="form-check-input" @bind="StateService.useMorningFilter">
             <label class="form-check-label">아침 수업 금지 (10시 이전)</label>
         </div>
 
         <div class="form-check">
-            <input type="checkbox" class="form-check-input" @bind="useNoFriday">
+            <input type="checkbox" class="form-check-input" @bind="StateService.useNoFriday">
             <label class="form-check-label">금요일 공강</label>
         </div>
 
         <div class="form-check">
-            <input type="checkbox" class="form-check-input" @bind="useMaxConsecutive">
-            <label class="form-check-label">연강 제한 (최대 @maxConsecutiveHours 시간)</label>
+            <input type="checkbox" class="form-check-input" @bind="StateService.useMaxConsecutive">
+            <label class="form-check-label">연강 제한 (최대 @StateService.maxConsecutiveHours 시간)</label>
         </div>
-        <div class="ms-3 mb-2" style="display: @(useMaxConsecutive ? "block" : "none")">
-            <input type="number" class="form-control form-control-sm" @bind="maxConsecutiveHours" min="1" max="10" />
+        <div class="ms-3 mb-2" style="display: @(StateService.useMaxConsecutive ? "block" : "none")">
+            <input type="number" class="form-control form-control-sm" @bind="StateService.maxConsecutiveHours" min="1" max="10" />
         </div>
 
         <div class="form-check">
-            <input type="checkbox" class="form-check-input" @bind="useBreakTimeFilter">
+            <input type="checkbox" class="form-check-input" @bind="StateService.useBreakTimeFilter">
             <label class="form-check-label">특정 시간대 공강</label>
         </div>
-        <div class="ms-3 mb-2 row" style="display: @(useBreakTimeFilter ? "flex" : "none")">
+        <div class="ms-3 mb-2 row" style="display: @(StateService.useBreakTimeFilter ? "flex" : "none")">
             <div class="col-4">
-                <select class="form-select form-select-sm" @bind="breakTimeDay">
+                <select class="form-select form-select-sm" @bind="StateService.breakTimeDay">
                     @foreach (var day in Enum.GetValues<CoreDay>().Take(5))
                     {
                         <option value="@day">@DaysOfWeek[(int)day]</option>
@@ -48,43 +48,43 @@
                 </select>
             </div>
             <div class="col-4">
-                <input type="number" class="form-control form-control-sm" @bind="breakTimeStartHour" min="0" max="23" />
+                <input type="number" class="form-control form-control-sm" @bind="StateService.breakTimeStartHour" min="0" max="23" />
             </div>
             <div class="col-4">
-                <input type="number" class="form-control form-control-sm" @bind="breakTimeEndHour" min="1" max="24" />
+                <input type="number" class="form-control form-control-sm" @bind="StateService.breakTimeEndHour" min="1" max="24" />
             </div>
-            <small class="text-muted mt-1">@(DaysOfWeek[(int)breakTimeDay]) @breakTimeStartHour 시 ~ @breakTimeEndHour 시</small>
+            <small class="text-muted mt-1">@(DaysOfWeek[(int)StateService.breakTimeDay]) @StateService.breakTimeStartHour 시 ~ @StateService.breakTimeEndHour 시</small>
         </div>
 
         <hr/>
         
         <h6>최종 필터 (Final)</h6>
         <div class="form-check">
-            <input type="checkbox" class="form-check-input" @bind="useIdleTimeFilter">
-            <label class="form-check-label">유휴시간 최소화 (최대 @maxIdleHours 시간)</label>
+            <input type="checkbox" class="form-check-input" @bind="StateService.useIdleTimeFilter">
+            <label class="form-check-label">유휴시간 최소화 (최대 @StateService.maxIdleHours 시간)</label>
         </div>
-        <div class="ms-3 mb-2" style="display: @(useIdleTimeFilter ? "block" : "none")">
-            <input type="number" class="form-control form-control-sm" @bind="maxIdleHours" min="1" max="5" />
-        </div>
-
-        <div class="form-check">
-            <input type="checkbox" class="form-check-input" @bind="useMaxDailyCourses">
-            <label class="form-check-label">하루 최대 수업 수 (@maxCoursesPerDay 개)</label>
-        </div>
-        <div class="ms-3 mb-2" style="display: @(useMaxDailyCourses ? "block" : "none")">
-            <input type="number" class="form-control form-control-sm" @bind="maxCoursesPerDay" min="1" max="10" />
+        <div class="ms-3 mb-2" style="display: @(StateService.useIdleTimeFilter ? "block" : "none")">
+            <input type="number" class="form-control form-control-sm" @bind="StateService.maxIdleHours" min="1" max="5" />
         </div>
 
         <div class="form-check">
-            <input type="checkbox" class="form-check-input" @bind="useTotalCreditFilter">
-            <label class="form-check-label">총 학점 제한 (@minCredit ~ @maxCredit 학점)</label>
+            <input type="checkbox" class="form-check-input" @bind="StateService.useMaxDailyCourses">
+            <label class="form-check-label">하루 최대 수업 수 (@StateService.maxCoursesPerDay 개)</label>
         </div>
-        <div class="ms-3 mb-2 row" style="display: @(useTotalCreditFilter ? "flex" : "none")">
+        <div class="ms-3 mb-2" style="display: @(StateService.useMaxDailyCourses ? "block" : "none")">
+            <input type="number" class="form-control form-control-sm" @bind="StateService.maxCoursesPerDay" min="1" max="10" />
+        </div>
+
+        <div class="form-check">
+            <input type="checkbox" class="form-check-input" @bind="StateService.useTotalCreditFilter">
+            <label class="form-check-label">총 학점 제한 (@StateService.minCredit ~ @StateService.maxCredit 학점)</label>
+        </div>
+        <div class="ms-3 mb-2 row" style="display: @(StateService.useTotalCreditFilter ? "flex" : "none")">
             <div class="col-6">
-                <input type="number" class="form-control form-control-sm" @bind="minCredit" min="0" />
+                <input type="number" class="form-control form-control-sm" @bind="StateService.minCredit" min="0" />
             </div>
             <div class="col-6">
-                <input type="number" class="form-control form-control-sm" @bind="maxCredit" min="@minCredit" />
+                <input type="number" class="form-control form-control-sm" @bind="StateService.maxCredit" min="@StateService.minCredit" />
             </div>
         </div>
 
@@ -92,17 +92,17 @@
     </div>
     <!-- 우측: 시간표 결과 패널 -->
     <div class="flex-grow-1">
-        @if (generatedSchedules.Count == 0 && loading)
+        @if (StateService.generatedSchedules.Count == 0 && loading)
         {
             <p><em>시간표 생성 중...</em></p>
         }
-        else if (generatedSchedules.Count == 0 && !loading)
+        else if (StateService.generatedSchedules.Count == 0 && !loading)
         {
             <p><em>조건에 맞는 시간표가 없습니다.</em></p>
         }
         else
         {
-        @foreach (var (schedule, idx) in generatedSchedules.Select((s, i) => (s, i + 1)))
+        @foreach (var (schedule, idx) in StateService.generatedSchedules.Select((s, i) => (s, i + 1)))
             {
                 <div class="card my-3 p-3">
                     <h5>시간표 @idx</h5>
@@ -172,36 +172,14 @@
 
 
 @code {
-    private List<List<Course>> generatedSchedules = new();
+    
 
     private static readonly string[] DaysOfWeek = { "월", "화", "수", "목", "금", "토" };
     private const int StartHour = 1;
     private const int EndHour = 23;
     private bool loading = false;
     
-    // 필터 바인딩 변수
-    // Realtime Filters
-    private bool useLunchBreak = false;
-    private bool useMorningFilter = false;
-    private bool useNoFriday = false;
-    private bool useMaxConsecutive = false;
-    private int maxConsecutiveHours = 5; // MaxConsecutiveFilter 기본값
 
-    private bool useBreakTimeFilter = false;
-    private CoreDay breakTimeDay = CoreDay.월; // BreakTimeFilter 기본 요일 (월)
-    private int breakTimeStartHour = 7; // BreakTimeFilter 기본 시작 시간 (점심시간 12:00에 해당하는 시간 인덱스)
-    private int breakTimeEndHour = 9;   // BreakTimeFilter 기본 종료 시간 (점심시간 13:00에 해당하는 시간 인덱스)
-
-    // Final Filters
-    private bool useIdleTimeFilter = false;
-    private int maxIdleHours = 2; // IdleTimeFilter 기본값
-    
-    private bool useMaxDailyCourses = false;
-    private int maxCoursesPerDay = 3; // MaxDailyCoursesFilter 기본값
-
-    private bool useTotalCreditFilter = false;
-    private int minCredit = 0;
-    private int maxCredit = 18; // TotalCreditFilter 기본값
 
     // 랜덤 색상 저장용
     private Dictionary<string, string> courseColors = new();
@@ -218,37 +196,39 @@
     }
     private async Task GenerateSchedules()
     {
+        Console.WriteLine($"선택된 그룹 수: {StateService.GroupedCourses.Count}");
+        foreach(var group in StateService.GroupedCourses) {
+            Console.WriteLine($"그룹: {group[0].Name}, 분반 수: {group.Count}");
+        }
         loading = true;
-        generatedSchedules.Clear();
+        StateService.generatedSchedules.Clear();
         StateHasChanged(); // "생성 중..." 메시지를 즉시 표시하기 위해 호출
 
         var selectedCourses = StateService.SelectedCourses.ToList();
         // 필터 목록 구성
-        var realtimeFilters = new List<IRealtimeFilter> { new TimeConflictFilter() }; // 시간 충돌은 항상 적용
-        var finalFilters = new List<IFinalFilter>();
         
-        if (useLunchBreak) realtimeFilters.Add(new LunchBreakFilter());
-        if (useMorningFilter) realtimeFilters.Add(new MorningFilter());
-        if (useNoFriday) realtimeFilters.Add(new NoDayFilter(CoreDay.금));
+        if (StateService.useLunchBreak) StateService.RealtimeFilters.Add(new LunchBreakFilter());
+        if (StateService.useMorningFilter) StateService.RealtimeFilters.Add(new MorningFilter());
+        if (StateService.useNoFriday) StateService.RealtimeFilters.Add(new NoDayFilter(CoreDay.금));
         
-        if (useMaxConsecutive) realtimeFilters.Add(new MaxConsecutiveFilter(maxConsecutiveHours));
-        if (useBreakTimeFilter) realtimeFilters.Add(new BreakTimeFilter(breakTimeDay, (breakTimeStartHour, breakTimeEndHour)));
+        if (StateService.useMaxConsecutive) StateService.RealtimeFilters.Add(new MaxConsecutiveFilter(StateService.maxConsecutiveHours));
+        if (StateService.useBreakTimeFilter) StateService.RealtimeFilters.Add(new BreakTimeFilter(StateService.breakTimeDay, (StateService.breakTimeStartHour, StateService.breakTimeEndHour)));
 
-        if (useIdleTimeFilter) finalFilters.Add(new IdleTimeFilter(maxIdleHours));
-        if (useMaxDailyCourses) finalFilters.Add(new MaxDailyCoursesFilter(maxCoursesPerDay));
-        if (useTotalCreditFilter) finalFilters.Add(new TotalCreditFilter(minCredit, maxCredit));
+        if (StateService.useIdleTimeFilter) StateService.FinalFilters.Add(new IdleTimeFilter(StateService.maxIdleHours));
+        if (StateService.useMaxDailyCourses) StateService.FinalFilters.Add(new MaxDailyCoursesFilter(StateService.maxCoursesPerDay));
+        if (StateService.useTotalCreditFilter) StateService.FinalFilters.Add(new TotalCreditFilter(StateService.minCredit, StateService.maxCredit));
 
 
         var service = new ScheduleService(
             maxPages: 50,
-            realtimeFilters: realtimeFilters,
-            finalFilters: finalFilters
+            realtimeFilters: StateService.RealtimeFilters,
+            finalFilters: StateService.FinalFilters
         );
 
         // IAsyncEnumerable을 직접 순회합니다.
-        await foreach (var schedule in service.GenerateSchedulesAsync(selectedCourses))
+        await foreach (var schedule in service.GenerateSchedulesAsync(StateService.GroupedCourses))
         {
-            generatedSchedules.Add(schedule);
+            StateService.generatedSchedules.Add(schedule);
             StateHasChanged(); // 결과가 나올 때마다 UI를 갱신
 
             // ✅ 핵심: UI 스레드에 제어권을 잠시 넘겨줘서 멈춤 현상을 방지합니다.

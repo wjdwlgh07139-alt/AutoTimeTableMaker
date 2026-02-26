@@ -5,8 +5,6 @@ using System.Text.RegularExpressions;
 
 namespace WebASMTimeTabler.Core;
 
-
-
 public class ScheduleGenerator
 {
     private readonly List<List<Course>> _groups;
@@ -104,9 +102,9 @@ public class ScheduleService
         _realtimeFilters = realtimeFilters ?? new List<IRealtimeFilter>() { new TimeConflictFilter()};
         _finalFilters = finalFilters ?? new List<IFinalFilter>();
     }
-    public async IAsyncEnumerable<List<Course>> GenerateSchedulesAsync(List<Course> selectedCourses)
+    public async IAsyncEnumerable<List<Course>> GenerateSchedulesAsync(List<List<Course>> groupedCourses)
     {
-        if (selectedCourses == null || selectedCourses.Count == 0)
+        if (groupedCourses == null || groupedCourses.Count == 0)
             yield break;
         //var allCourses = selectedCourses;//reader.LoadSelectCourses(selectedCourses);
         /* 디리디리디디딕디리버기기깅깅
@@ -119,9 +117,11 @@ public class ScheduleService
             }
         }
         */
+        /*
         var groupedCourses = selectedCourses.GroupBy(c => c.Name)
                       .Select(g => g.ToList())
                       .ToList();
+        */
         /*
         var realtimeFilters = new List<IRealtimeFilter>
         {
