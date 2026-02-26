@@ -11,6 +11,7 @@ public class ScheduleGenerator
 {
     private readonly List<List<Course>> _groups;
     private readonly List<IRealtimeFilter> _filters;
+
     public ScheduleGenerator(List<List<Course>> groups, List<IRealtimeFilter> filters)
     {
         _groups = groups;
@@ -19,81 +20,74 @@ public class ScheduleGenerator
 
     public async IAsyncEnumerable<List<Course>> GenerateAsync(int maxSchedules = int.MaxValue)
     {
-        int n = _groups.Count;
-        if (n == 0) yield break;
-
-        int[] idx = new int[n];
-        List<Course> schedule = new();
         int count = 0;
+        var currentSchedule = new List<Course>();
+        var occupied = new HashSet<(DayOfWeek day, int hour)>();
 
-        while (true)
+        // 재귀 로직을 내부 로컬 함수로 정의
+        await foreach (var result in Backtrack(0, currentSchedule, occupied))
         {
-            schedule.Clear();
-            var occupiedTimeSlots = new HashSet<(DayOfWeek day, int hour)>();
-            bool valid = true;
+            yield return result;
+            count++;
+            if (count >= maxSchedules) break;
+        }
+    }
 
-            // 현재 idx 조합에 대한 schedule 생성
-            for (int i = 0; i < n; i++)
+    private async IAsyncEnumerable<List<Course>> Backtrack(
+        int groupIndex, 
+        List<Course> currentSchedule, 
+        HashSet<(DayOfWeek day, int hour)> occupied)
+    {
+        // 모든 그룹에서 과목을 하나씩 다 뽑았을 때 (성공)
+        if (groupIndex == _groups.Count)
+        {
+            yield return new List<Course>(currentSchedule);
+            yield break;
+        }
+
+        foreach (var course in _groups[groupIndex])
+        {
+            // 1. 실시간 필터 검사
+            bool isValid = true;
+            foreach (var filter in _filters)
             {
-                var course = _groups[i][idx[i]];
-
-                // 실시간 필터 적용
-                foreach (var filter in _filters)
+                if (!filter.Apply(course, occupied))
                 {
-                    if (!filter.Apply(course, occupiedTimeSlots))
+                    isValid = false;
+                    break;
+                }
+            }
+
+            if (isValid)
+            {
+                // 2. 상태 추가 (Do)
+                currentSchedule.Add(course);
+                var addedSlots = new List<(DayOfWeek, int)>();
+                foreach (var t in course.Times)
+                {
+                    for (int h = t.start; h <= t.end; h++)
                     {
-                        valid = false;
-                        break;
+                        if (occupied.Add((t.day, h))) 
+                            addedSlots.Add((t.day, h));
                     }
                 }
 
-                if (!valid) break;
+                // UI 스레드 점유 방지
+                await Task.Yield();
 
-                schedule.Add(course);
-                foreach (var t in course.Times)
-                    for (int h = t.start; h <= t.end; h++)
-                        occupiedTimeSlots.Add((t.day, h));
-            }
-
-            if (valid)
-            {
-                //debuging
-                foreach (var i in schedule)
+                // 3. 다음 그룹으로 이동 (Recurse)
+                await foreach (var subSchedule in Backtrack(groupIndex + 1, currentSchedule, occupied))
                 {
-                    Console.WriteLine(i);
+                    yield return subSchedule;
                 }
-                Console.WriteLine();
-                yield return new List<Course>(schedule);
+
+                // 4. 상태 복구 (Undo) - 백트래킹의 핵심
+                currentSchedule.RemoveAt(currentSchedule.Count - 1);
+                foreach (var slot in addedSlots)
+                {
+                    occupied.Remove(slot);
+                }
             }
-            count++;
-            if (count >= maxSchedules) yield break;
-            await Task.Yield(); // UI 스레드 양보
-
-
-            // 다음 조합 (odometer 방식) + 백트래킹
-            int k = n - 1;
-            while (k >= 0)
-            {
-                idx[k]++;
-                if (idx[k] < _groups[k].Count) break;
-
-                // 이전 과목의 시간 제거
-                var prevCourse = _groups[k][idx[k] - 1];
-                foreach (var t in prevCourse.Times)
-                    for (int h = t.start; h <= t.end; h++)
-                        occupiedTimeSlots.Remove((t.day, h));
-
-                idx[k] = 0;
-                k--;
-            }
-
-            if (k < 0) yield break;
-
-            // 새 과목 추가
-            var nextCourse = _groups[k][idx[k]];
-            foreach (var t in nextCourse.Times)
-                for (int h = t.start; h <= t.end; h++)
-                    occupiedTimeSlots.Add((t.day, h));
         }
     }
 }
