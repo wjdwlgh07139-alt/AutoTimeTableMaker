@@ -1,87 +1,113 @@
-﻿@page "/courses"
+@page "/courses"
 @using WebASMTimeTabler.Core
 @using WebASMTimeTabler.ComponentPages
 @inject HttpClient Http
 @inject NavigationManager NavManager
 @inject ScheduleStateService StateService
 
-<PageTitle>강의 목록</PageTitle>
+<PageTitle>강의 목록 - AutoTimeTabler</PageTitle>
 
+<h2 class="fw-bold mb-1" style="color: var(--heritage-green); letter-spacing: -0.5px;">강의 목록</h2>
+<p class="text-secondary small mb-4">수강하려는 과목을 선택하여 시간표 조합을 생성해 보세요.</p>
 
-<h1>강의 목록</h1>
-
-<p>전체 강의 목록입니다.</p>
-
-<div class="mb-3">
+<div class="mb-4">
     <input type="text" 
-            class="form-control" 
+            class="form-control py-2 shadow-sm" 
+            style="border-radius: 10px; border: 1px solid var(--border-color); font-size: 0.95rem;"
             placeholder="과목명, 교수명, 과목번호로 검색" 
             value="@StateService.SearchTerm" 
             @oninput="OnSearchTermChanged" />
-
 </div>
+
 @if (StateService.AllCourses == null)
 {
     <p><em>Loading...</em></p>
 }
 else
 {   
-    <div class="mb-2">
-        <button class="btn btn-sm btn-secondary" @onclick="SelectAllFiltered">현재 목록 전체 선택</button>
-        <button class="btn btn-sm btn-secondary" @onclick="DeselectAllFiltered">현재 목록 전체 해제</button>
+    <div class="mb-3 d-flex gap-2">
+        <button type="button" class="btn btn-sm btn-outline-success fw-medium px-3" style="border-radius: 6px;" @onclick="SelectAllFiltered">현재 목록 전체 선택</button>
+        <button type="button" class="btn btn-sm btn-outline-danger fw-medium px-3" style="border-radius: 6px;" @onclick="DeselectAllFiltered">현재 목록 전체 해제</button>
     </div>
-    <h3 class="mt-4 d-flex align-items-center">
-        <span>선택된 과목 @(StateService.SelectedCourses.Count)개</span>
-        <button class="btn btn-sm btn-link ms-2" @onclick="ToggleSelectedCourses">
-            @(showSelectedCourses ? "▲ 접기" : "▼ 펼치기")
-        </button>
-        <button class="btn btn-primary" @onclick="GoToTimeTabler">시간표 생성하기</button>
-    </h3>
+    
+    <div class="card p-3 mb-4 border-0" style="border-radius: 12px; background-color: var(--heritage-green-pale); box-shadow: var(--card-shadow);">
+        <div class="d-flex justify-content-between align-items-center flex-wrap gap-2">
+            <h5 class="fw-bold mb-0 d-flex align-items-center" style="color: var(--heritage-green); font-size: 1.05rem;">
+                <span>선택된 과목 (@StateService.SelectedCourses.Count)개</span>
+                <button type="button" class="btn btn-sm btn-link text-decoration-none ms-2" style="font-size: 0.85rem; color: var(--heritage-green-light);" @onclick="ToggleSelectedCourses">
+                    @(showSelectedCourses ? "▲ 접기" : "▼ 펼치기")
+                </button>
+            </h5>
+            <button type="button" class="btn btn-primary fw-bold btn-sm shadow-sm" style="border-radius: 6px;" @onclick="GoToTimeTabler">시간표 생성하러 가기 &rarr;</button>
+        </div>
 
-    @if (showSelectedCourses)
-    {
-        @if (StateService.SelectedCourses.Count == 0)
+        @if (showSelectedCourses)
         {
-            <p><em>선택된 과목이 없습니다.</em></p>
-        }
-        else
-        {
-            <ul class="list-group">
-                @foreach (var course in StateService.SelectedCourses)
+            <div class="mt-3">
+                @if (StateService.SelectedCourses.Count == 0)
                 {
-                    <li @key="course.ClassNumber" class="list-group-item d-flex justify-content-between align-items-center">
-                        <span>@course.Name (@course.Professor)</span>
-                        <button class="btn btn-sm btn-danger" @onclick="() => RemoveCourse(course)">제거</button>
-                    </li>
+                    <p class="text-secondary small mb-0"><em>선택된 과목이 없습니다.</em></p>
                 }
-            </ul>
+                else
+                {
+                    <div class="d-flex gap-2 flex-wrap">
+                        @foreach (var course in StateService.SelectedCourses)
+                        {
+                            <div @key="course.ClassNumber" class="d-inline-flex align-items-center bg-white border px-3 py-1 rounded-pill" style="font-size: 0.85rem; border-color: var(--border-color) !important;">
+                                <span class="fw-medium text-dark me-2">@course.Name (@course.Professor)</span>
+                                <button type="button" class="btn btn-sm p-0 text-danger fw-bold" style="line-height: 1; font-size: 0.9rem;" @onclick="() => RemoveCourse(course)">&times;</button>
+                            </div>
+                        }
+                    </div>
+                }
+            </div>
         }
+    </div>
+
+    @if (string.IsNullOrWhiteSpace(StateService.SearchTerm))
+    {
+        <div class="text-center py-5 rounded-4" style="background-color: var(--heritage-green-pale); border: 1px dashed var(--border-color); color: var(--text-secondary);">
+            <svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" fill="var(--heritage-green-light)" class="bi bi-search mb-3" viewBox="0 0 16 16">
+              <path d="M11.742 10.344a6.5 6.5 0 1 0-1.397 1.398h-.001q.044.06.098.115l3.85 3.85a1 1 0 0 0 1.415-1.414l-3.85-3.85a1 1 0 0 0-.115-.1zM12 6.5a5.5 5.5 0 1 1-11 0 5.5 5.5 0 0 1 11 0"/>
+            </svg>
+            <h5 class="fw-bold" style="color: var(--heritage-green);">과목 검색을 시작해 보세요</h5>
+            <p class="small mb-0">과목명, 교수명, 또는 과목번호를 입력하시면 수강 가능한 강의 목록이 노출됩니다.</p>
+        </div>
     }
-    <table class="table" style="table-layout: fixed; width: 100%;">
-        <thead>
-            <tr>
-                <th style="width: 4%;">선택</th>
-                <th style="width: 4%; min-width: 30px;">학년</th>
-                <th style="width: 4%; min-width: 30px;">학점</th>
-                <th style="width: 8%; min-width: 60px;">학수번호</th>
-                <th style="width: 8%; min-width: 60px;">교과번호</th>
-                <th style="width: 7%; min-width: 60px;">이수구분</th>
-                <th style="width: 7%; min-width: 60px;">과목번호</th>
-                <th style="width: 25%; min-width: 120px;">시간</th>
-                <th style="width: 23%; min-width: 120px;">교과목명</th>
-                <th style="width: 5%; min-width: 50px;">교수명</th>
-                <th style="width: 5%; min-width: 60px;">교과시간</th>
-            </tr>
-        </thead>
-        <tbody>
-            <!-- 가상화 컴포넌트, 이놈이 자동으로 foreach 수행하고 보이는 부분만 렌더링함. OverscanCount 넉넉하게 잡아야 버벅거림 적음-->
-            <Virtualize Items="@filteredCourses" Context="course" ItemSize="53" OverscanCount="50">
-                <CourseItem @key="course.ClassNumber" Course="course" IsSelected="IsSelected(course)" OnToggleSelection="ToggleCourse" />
-            </Virtualize>
-            
-            
-        </tbody>
-    </table>
+    else if (filteredCourses.Count == 0)
+    {
+        <div class="text-center py-5 rounded-4" style="background-color: var(--heritage-green-pale); border: 1px dashed var(--border-color); color: var(--text-secondary);">
+            <p class="mb-0">검색 조건에 맞는 과목이 없습니다. 다시 입력해 주세요.</p>
+        </div>
+    }
+    else
+    {
+        <div class="card border-0 p-3" style="border-radius: 16px; box-shadow: var(--card-shadow); background-color: var(--surface-white); overflow-x: auto;">
+            <table class="table text-center align-middle" style="table-layout: fixed; width: 100%; border: none; margin-bottom: 0;">
+                <thead>
+                    <tr style="background-color: var(--heritage-green); color: var(--possibility-white);">
+                        <th style="width: 50px; font-weight: 600; border: none; border-radius: 8px 0 0 8px; padding: 12px 0;">선택</th>
+                        <th style="width: 50px; font-weight: 600; border: none; padding: 12px 0;">학년</th>
+                        <th style="width: 50px; font-weight: 600; border: none; padding: 12px 0;">학점</th>
+                        <th style="width: 90px; font-weight: 600; border: none; padding: 12px 0;">학수번호</th>
+                        <th style="width: 90px; font-weight: 600; border: none; padding: 12px 0;">교과번호</th>
+                        <th style="width: 80px; font-weight: 600; border: none; padding: 12px 0;">이수구분</th>
+                        <th style="width: 80px; font-weight: 600; border: none; padding: 12px 0;">과목번호</th>
+                        <th style="width: 250px; font-weight: 600; border: none; padding: 12px 0;">시간</th>
+                        <th style="width: 230px; font-weight: 600; border: none; padding: 12px 0;">교과목명</th>
+                        <th style="width: 90px; font-weight: 600; border: none; padding: 12px 0;">교수명</th>
+                        <th style="width: 80px; font-weight: 600; border: none; border-radius: 0 8px 8px 0; padding: 12px 0;">교과시간</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <!-- 가상화 컴포넌트, 이놈이 자동으로 foreach 수행하고 보이는 부분만 렌더링함. OverscanCount 넉넉하게 잡아야 버벅거림 적음-->
+                    <Virtualize Items="@filteredCourses" Context="course" ItemSize="53" OverscanCount="50">
+                        <CourseItem @key="course.ClassNumber" Course="course" IsSelected="IsSelected(course)" OnToggleSelection="ToggleCourse" />
+                    </Virtualize>
+                </tbody>
+            </table>
+        </div>
+    }
 }
 
 @code {
@@ -108,14 +134,19 @@ else
         if (StateService.AllCourses == null) return;
 
         var term = StateService.SearchTerm;
-        var list = string.IsNullOrWhiteSpace(term)
-            ? StateService.AllCourses
-            : StateService.AllCourses.Where(c => 
+        if (string.IsNullOrWhiteSpace(term))
+        {
+            filteredCourses = new List<Course>();
+        }
+        else
+        {
+            var list = StateService.AllCourses.Where(c => 
                 c.Name.Contains(term, StringComparison.OrdinalIgnoreCase) || 
                 c.Professor.Contains(term, StringComparison.OrdinalIgnoreCase) ||
                 c.ClassNumber.Contains(term, StringComparison.OrdinalIgnoreCase));
 
-        filteredCourses = list.ToList();
+            filteredCourses = list.ToList();
+        }
         StateHasChanged();
     }
 

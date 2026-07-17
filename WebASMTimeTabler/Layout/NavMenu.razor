@@ -1,6 +1,9 @@
-﻿<div class="top-row ps-3 navbar navbar-dark">
-    <div class="container-fluid">
-        <a class="navbar-brand" href="">WebASMTimeTabler</a>
+<div class="top-row ps-3 navbar navbar-dark">
+    <div class="container-fluid d-flex justify-content-center justify-content-md-start">
+        <a class="navbar-brand text-nowrap" href="">
+            <span class="brand-short">ATT</span>
+            <span class="brand-long">AutoTimeTabler</span>
+        </a>
         <button title="Navigation menu" class="navbar-toggler" @onclick="ToggleNavMenu">
             <span class="navbar-toggler-icon"></span>
         </button>
@@ -9,22 +12,30 @@
 
 <div class="@NavMenuCssClass nav-scrollable" @onclick="ToggleNavMenu">
     <nav class="flex-column">
-        <div class="nav-item px-3">
-            <NavLink class="nav-link" href="" Match="NavLinkMatch.All">
-                <span class="bi bi-house-door-fill-nav-menu" aria-hidden="true"></span> Home
+        <div class="nav-item px-3 text-start">
+            <NavLink class="nav-link d-inline-flex d-md-flex align-items-center" href="" Match="NavLinkMatch.All">
+                <span class="bi bi-house-door-fill-nav-menu" aria-hidden="true"></span>
+                <span class="nav-text">메인화면</span>
             </NavLink>
         </div>
-        <div class="nav-item px-3">
-            <NavLink class="nav-link" href="courses">
-                <span class="bi bi-list-nested-nav-menu" aria-hidden="true"></span> 강의목록
+        <div class="nav-item px-3 text-start">
+            <NavLink class="nav-link d-inline-flex d-md-flex align-items-center" href="courses">
+                <span class="bi bi-list-nested-nav-menu" aria-hidden="true"></span>
+                <span class="nav-text">강의 목록</span>
             </NavLink>
         </div>
-        <div class="nav-item px-3">
-            <NavLink class="nav-link" href="timetable">
-                <span class="bi bi-plus-square-fill-nav-menu" aria-hidden="true"></span> 시간표
+        <div class="nav-item px-3 text-start">
+            <NavLink class="nav-link d-inline-flex d-md-flex align-items-center" href="timetable">
+                <span class="bi bi-plus-square-fill-nav-menu" aria-hidden="true"></span>
+                <span class="nav-text">시간표 확인</span>
             </NavLink>
         </div>
-        
+        <div class="nav-item px-3 text-start">
+            <NavLink class="nav-link d-inline-flex d-md-flex align-items-center" href="myschedules">
+                <span class="bi bi-calendar-check-nav-menu" aria-hidden="true"></span>
+                <span class="nav-text">내 시간표</span>
+            </NavLink>
+        </div>
     </nav>
 </div>
 

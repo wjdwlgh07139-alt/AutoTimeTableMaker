@@ -1,0 +1,303 @@
+@page "/myschedules"
+@using WebASMTimeTabler.Core
+@inject ScheduleStateService StateService
+@implements IDisposable
+
+<PageTitle>내 시간표 - AutoTimeTabler</PageTitle>
+
+<div class="container-fluid py-4 px-md-4">
+    <!-- Header Title -->
+    <div class="d-flex justify-content-between align-items-center mb-4 pb-2 border-bottom">
+        <div>
+            <h3 class="fw-bold mb-1" style="color: var(--heritage-green); letter-spacing: -1px;">내 시간표 보관함</h3>
+            <p class="text-secondary small mb-0">선택하여 보관 중인 시간표 목록을 비교하고 확인할 수 있습니다.</p>
+        </div>
+        <span class="badge px-3 py-2 rounded-pill font-monospace" style="background-color: var(--heritage-green-pale); color: var(--heritage-green); font-size: 0.9rem; font-weight: 600;">
+            총 @(StateService.SelectedSchedules.Count)개 보관됨
+        </span>
+    </div>
+
+    @if (StateService.SelectedSchedules.Count == 0)
+    {
+        <!-- Empty State Container -->
+        <div class="text-center py-5 my-5 rounded-4" style="background-color: var(--heritage-green-pale); border: 2px dashed var(--border-color); max-width: 600px; margin: 0 auto;">
+            <svg xmlns="http://www.w3.org/2000/svg" width="60" height="60" fill="var(--heritage-green-light)" class="bi bi-calendar-x mb-4" viewBox="0 0 16 16">
+              <path d="M6.146 7.146a.5.5 0 0 1 .708 0L8 8.293l1.146-1.147a.5.5 0 1 1 .708.708L8.707 9l1.147 1.146a.5.5 0 0 1-.708.708L8 9.707l-1.146 1.147a.5.5 0 0 1-.708-.708L7.293 9 6.146 7.854a.5.5 0 0 1 0-.708"/>
+              <path d="M3.5 0a.5.5 0 0 1 .5.5V1h8V.5a.5.5 0 0 1 1 0V1h1a2 2 0 0 1 2 2v11a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2V3a2 2 0 0 1 2-2h1V.5a.5.5 0 0 1 .5-.5M1 4v10a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V4z"/>
+            </svg>
+            <h4 class="fw-bold mb-2" style="color: var(--heritage-green);">보관된 시간표가 없습니다</h4>
+            <p class="text-secondary small px-4 mb-4">마음에 드는 시간표 구성안을 [시간표 확인] 메뉴에서 선택하여 보관함에 담아보세요.</p>
+            <a href="timetable" class="btn px-4 py-2 rounded-pill fw-semibold border-0 transition-all" style="background-color: var(--heritage-green); color: var(--possibility-white); text-decoration: none;">
+                시간표 생성하러 가기 &rarr;
+            </a>
+        </div>
+    }
+    else
+    {
+        <!-- Grid layout for side-by-side or stacked comparisons -->
+        <div class="row g-4">
+            @for (int i = 0; i < StateService.SelectedSchedules.Count; i++)
+            {
+                var schedule = StateService.SelectedSchedules[i];
+                var idx = i + 1;
+                
+                // 가로 한 행(2열 구조)의 짝꿍 시간표 인덱스 파악 및 행 최대 종료 슬롯 계산
+                var rowStart = i - (i % 2);
+                var rowEndHour = 18;
+                var idx1 = rowStart;
+                var idx2 = rowStart + 1;
+                if (idx1 < StateService.SelectedSchedules.Count)
+                {
+                    rowEndHour = Math.Max(rowEndHour, GetMaxEndHour(StateService.SelectedSchedules[idx1]));
+                }
+                if (idx2 < StateService.SelectedSchedules.Count)
+                {
+                    rowEndHour = Math.Max(rowEndHour, GetMaxEndHour(StateService.SelectedSchedules[idx2]));
+                }
+
+                // 각 시간표별 빠른 룩업 캐시 사전 가공
+                var courseStartLookup = new Dictionary<(string day, int hour), (Course Course, CourseTime Time)>();
+                var spannedSlots = new HashSet<(string day, int hour)>();
+
+                foreach (var course in schedule)
+                {
+                    if (course.Times == null) continue;
+                    foreach (var t in course.Times)
+                    {
+                        var dayStr = t.day.ToString();
+                        courseStartLookup[(dayStr, t.start)] = (course, t);
+                        for (int h = t.start + 1; h <= t.end; h++)
+                        {
+                            spannedSlots.Add((dayStr, h));
+                        }
+                    }
+                }
+
+                <div class="col-12 col-xl-6">
+                    <div class="card p-4 border-0" style="border-radius: 16px; box-shadow: var(--card-shadow); background-color: var(--surface-white); height: 100%;">
+                        <!-- Card Header Toggle -->
+                        <div class="d-flex justify-content-between align-items-center mb-3">
+                            <h5 class="fw-bold mb-0" style="color: var(--heritage-green); letter-spacing: -0.5px;">보관된 시간표 #@idx</h5>
+                            <button type="button" class="btn btn-sm btn-outline-danger px-3 py-1 rounded-pill fw-medium transition-all"
+                                    style="font-size: 0.75rem; border-color: rgba(220,53,69,0.3);"
+                                    @onclick="@(_ => RemoveFromSaved(schedule))">
+                                담기 취소 &times;
+                            </button>
+                        </div>
+
+                        <!-- Timetable Grid -->
+                        <div class="table-responsive">
+                            <table class="table text-center align-middle" style="width: 100%; table-layout: fixed; border-collapse: separate; border-spacing: 3px; border: none; margin-bottom: 0;">
+                                <thead>
+                                    <tr style="background-color: var(--heritage-green-pale); color: var(--heritage-green); font-size: 0.85rem;">
+                                        <th style="width: 70px; font-weight: 600; border: none; border-radius: 6px 0 0 6px; padding: 8px 0;">시간</th>
+                                        @foreach (var day in DaysOfWeek)
+                                        {
+                                            var isLast = day == DaysOfWeek[^1];
+                                            <th style="font-weight: 600; border: none; @(isLast ? "border-radius: 0 6px 6px 0;" : "") padding: 8px 0;">@day</th>
+                                        }
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @for (int hour = StartHour; hour <= rowEndHour; hour++)
+                                    {
+                                        <tr>
+                                            @{
+                                                var totalMinutes = 9 * 60 + (hour - 1) * 30;
+                                                var displayHour = totalMinutes / 60;
+                                                var displayMinute = totalMinutes % 60;
+                                            }
+                                            <td style="font-weight: 500; font-size: 0.75rem; color: var(--text-secondary); background-color: var(--possibility-white); border: 1px solid var(--border-color); border-radius: 6px; padding: 4px 0;">
+                                                @($"{displayHour:D2}:{displayMinute:D2}")
+                                            </td>
+                                            @foreach (var day in DaysOfWeek)
+                                            {
+                                                if (courseStartLookup.TryGetValue((day, hour), out var slot))
+                                                {
+                                                    var color = GetCourseColor(slot.Course.Name);
+                                                    <td rowspan="@(slot.Time.end - slot.Time.start + 1)" 
+                                                        @onclick="@(_ => ShowCourseDetail(slot.Course))"
+                                                        style="background-color:@color; color:#0e201c; font-weight:600; border-radius: 6px; border: none; box-shadow: 0 2px 5px rgba(0,0,0,0.04); font-size: 0.8rem; padding: 6px; line-height: 1.2; cursor: pointer;"
+                                                        class="course-cell-hover">
+                                                        <div class="fw-bold text-truncate" title="@slot.Course.Name">@slot.Course.Name</div>
+                                                        <div class="text-truncate" style="font-size: 0.68rem; opacity: 0.8; margin-top: 1px;" title="@slot.Course.Professor">@slot.Course.Professor</div>
+                                                        <div style="font-size: 0.64rem; opacity: 0.7; margin-top: 1px; font-family: monospace;">@slot.Course.ClassNumber</div>
+                                                    </td>
+                                                }
+                                                else if (spannedSlots.Contains((day, hour)))
+                                                {
+                                                    // 로우스팬으로 점유됨
+                                                }
+                                                else
+                                                {
+                                                    <td style="border: 1px dashed var(--border-color); border-radius: 6px; background-color: transparent;"></td>
+                                                }
+                                            }
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            }
+        </div>
+    }
+</div>
+
+@if (selectedCourseForModal != null)
+{
+    <div class="custom-modal-backdrop" @onclick="CloseModal">
+        <div class="custom-modal-content" @onclick:stopPropagation>
+            <div class="custom-modal-header" style="background-color: var(--heritage-green); color: var(--possibility-white);">
+                <h6 class="fw-bold mb-0">강의 상세 정보</h6>
+                <button type="button" class="btn-close btn-close-white" @onclick="CloseModal" style="font-size: 0.75rem;" aria-label="Close"></button>
+            </div>
+            <div class="custom-modal-body p-4 text-start">
+                <h4 class="fw-bold mb-1" style="color: var(--heritage-green); font-size: 1.3rem;">@selectedCourseForModal.Name</h4>
+                <span class="badge px-2.5 py-1 rounded-pill mb-3" style="background-color: var(--heritage-green-pale); color: var(--heritage-green); font-size: 0.75rem;">
+                    @selectedCourseForModal.Division
+                </span>
+                
+                <div class="row g-3" style="font-size: 0.85rem;">
+                    <div class="col-6">
+                        <span class="text-secondary small d-block">담당교수</span>
+                        <span class="fw-semibold text-dark">@selectedCourseForModal.Professor</span>
+                    </div>
+                    <div class="col-6">
+                        <span class="text-secondary small d-block">과목번호</span>
+                        <span class="fw-semibold text-dark font-monospace">@selectedCourseForModal.ClassNumber</span>
+                    </div>
+                    <div class="col-6">
+                        <span class="text-secondary small d-block">학수번호</span>
+                        <span class="fw-semibold text-dark font-monospace">@selectedCourseForModal.CourseID</span>
+                    </div>
+                    <div class="col-6">
+                        <span class="text-secondary small d-block">교과번호</span>
+                        <span class="fw-semibold text-dark font-monospace">@selectedCourseForModal.CourseNumber</span>
+                    </div>
+                    <div class="col-6">
+                        <span class="text-secondary small d-block">대상학년</span>
+                        <span class="fw-semibold text-dark">@(selectedCourseForModal.Grade)학년</span>
+                    </div>
+                    <div class="col-6">
+                        <span class="text-secondary small d-block">학점</span>
+                        <span class="fw-semibold text-dark">@(selectedCourseForModal.Credit)학점</span>
+                    </div>
+                    <div class="col-12">
+                        <span class="text-secondary small d-block">시간 및 강의실</span>
+                        @if (selectedCourseForModal.Times != null && selectedCourseForModal.Times.Count > 0)
+                        {
+                            @foreach (var t in selectedCourseForModal.Times)
+                            {
+                                <span class="fw-semibold text-dark d-block">@GetFormattedCourseTime(t)</span>
+                            }
+                        }
+                        else
+                        {
+                            <span class="fw-semibold text-dark">정보 없음</span>
+                        }
+                    </div>
+                </div>
+            </div>
+            <div class="custom-modal-footer p-3 border-top text-end">
+                <button type="button" class="btn px-4 py-1.5 rounded-pill fw-semibold border-0 text-white transition-all" 
+                        style="background-color: var(--heritage-green); font-size: 0.85rem;"
+                        @onclick="CloseModal">닫기</button>
+            </div>
+        </div>
+    </div>
+}
+
+@code {
+    private static readonly string[] DaysOfWeek = { "월", "화", "수", "목", "금", "토" };
+    private const int StartHour = 1;
+    private const int EndHour = 18; // 기본 최대 시간 18:00 (슬롯 18)
+
+    private Dictionary<string, string> courseColors = new();
+    private Course? selectedCourseForModal;
+
+    private void ShowCourseDetail(Course course)
+    {
+        selectedCourseForModal = course;
+    }
+
+    private void CloseModal()
+    {
+        selectedCourseForModal = null;
+    }
+
+    private string GetFormattedCourseTime(CourseTime t)
+    {
+        var dayStr = t.day switch
+        {
+            WebASMTimeTabler.Core.DayOfWeek.월 => "월",
+            WebASMTimeTabler.Core.DayOfWeek.화 => "화",
+            WebASMTimeTabler.Core.DayOfWeek.수 => "수",
+            WebASMTimeTabler.Core.DayOfWeek.목 => "목",
+            WebASMTimeTabler.Core.DayOfWeek.금 => "금",
+            WebASMTimeTabler.Core.DayOfWeek.토 => "토",
+            WebASMTimeTabler.Core.DayOfWeek.일 => "일",
+            WebASMTimeTabler.Core.DayOfWeek.e러닝 => "e러닝",
+            _ => "알수없음"
+        };
+
+        if (t.day == WebASMTimeTabler.Core.DayOfWeek.e러닝)
+        {
+            return "e러닝 (원격강의)";
+        }
+
+        var startMin = 9 * 60 + (t.start - 1) * 30;
+        var endMin = 9 * 60 + (t.end - 1) * 30 + 30;
+
+        var startHourStr = $"{startMin / 60:D2}:{startMin % 60:D2}";
+        var endHourStr = $"{endMin / 60:D2}:{endMin % 60:D2}";
+
+        var roomStr = string.IsNullOrWhiteSpace(t.Room) ? "강의실 미지정" : t.Room;
+
+        return $"{dayStr}요일 {startHourStr}~{endHourStr} ({roomStr})";
+    }
+
+    private string GetCourseColor(string courseName)
+    {
+        if (!courseColors.ContainsKey(courseName))
+        {
+            var rand = new Random(courseName.GetHashCode());
+            var hue = rand.Next(0, 360);
+            courseColors[courseName] = $"hsl({hue}, 40%, 85%)";
+        }
+        return courseColors[courseName];
+    }
+
+    private void RemoveFromSaved(List<Course> schedule)
+    {
+        StateService.ToggleSelectSchedule(schedule);
+    }
+
+    private int GetMaxEndHour(List<Course> schedule)
+    {
+        int maxHour = 18; // 기본 18:00 종료 (슬롯 18)
+        foreach (var course in schedule)
+        {
+            if (course.Times == null) continue;
+            foreach (var t in course.Times)
+            {
+                if (t.end > maxHour)
+                {
+                    maxHour = t.end;
+                }
+            }
+        }
+        return maxHour;
+    }
+
+    protected override void OnInitialized()
+    {
+        StateService.OnStateChanged += StateHasChanged;
+    }
+
+    public void Dispose()
+    {
+        StateService.OnStateChanged -= StateHasChanged;
+    }
+}

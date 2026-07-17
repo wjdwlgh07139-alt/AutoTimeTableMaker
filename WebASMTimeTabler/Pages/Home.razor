@@ -1,7 +1,71 @@
-﻿@page "/"
+@page "/"
+@inject NavigationManager NavManager
 
-<PageTitle>Home</PageTitle>
+<PageTitle>AutoTimeTabler - 스마트 시간표 메이커</PageTitle>
 
-<h1>Hello, world!</h1>
+<div class="container py-5 px-4" style="max-width: 900px; color: var(--text-primary);">
+    <!-- 히어로 섹션 -->
+    <div class="text-center mb-5 py-5 px-4 rounded-4" style="background-color: var(--heritage-green-pale); border: 1px solid var(--border-color); box-shadow: var(--card-shadow);">
+        <h1 class="fw-bold mb-3" style="color: var(--heritage-green); letter-spacing: -1px; font-size: 2.5rem;">
+            AutoTimeTabler
+        </h1>
+        <p class="fs-5 mb-4 text-secondary" style="max-width: 600px; margin: 0 auto; color: var(--text-secondary) !important;">
+            복잡한 강의 시간 조율은 자동화 도구에게 맡기세요. 공강 요일, 점심시간, 선호 시간대 필터를 적용해 나에게 딱 맞는 최적의 시간표를 1초 만에 도출합니다.
+        </p>
+        <button type="button" class="btn btn-primary btn-lg px-5 fw-bold py-3 transition-all" style="border-radius: 12px; box-shadow: 0 4px 15px rgba(18, 78, 63, 0.2);" @onclick="StartPlanning">
+            지금 시간표 만들기
+        </button>
+    </div>
 
-Welcome to your new app.
+    <!-- 기능 카드 섹션 -->
+    <h3 class="fw-bold mb-4 text-center" style="color: var(--heritage-green); letter-spacing: -0.5px;">간편한 3단계 제작 과정</h3>
+    <div class="row g-4 mb-5">
+        <div class="col-md-4">
+            <div class="card p-4 border-0 h-100 text-center" style="border-radius: 16px; background-color: var(--surface-white); box-shadow: var(--card-shadow);">
+                <div class="d-inline-flex align-items-center justify-content-center rounded-circle mb-3 mx-auto" style="width: 50px; height: 50px; background-color: var(--heritage-green-pale); color: var(--heritage-green);">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" class="bi bi-search" viewBox="0 0 16 16">
+                      <path d="M11.742 10.344a6.5 6.5 0 1 0-1.397 1.398h-.001q.044.06.098.115l3.85 3.85a1 1 0 0 0 1.415-1.414l-3.85-3.85a1 1 0 0 0-.115-.1zM12 6.5a5.5 5.5 0 1 1-11 0 5.5 5.5 0 0 1 11 0"/>
+                    </svg>
+                </div>
+                <h5 class="fw-bold mb-2">1. 과목 선택</h5>
+                <p class="text-muted small mb-0" style="color: var(--text-secondary) !important;">
+                    [강의목록] 메뉴에서 수강하려는 과목들을 검색해 장바구니에 담아 보관합니다.
+                </p>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card p-4 border-0 h-100 text-center" style="border-radius: 16px; background-color: var(--surface-white); box-shadow: var(--card-shadow);">
+                <div class="d-inline-flex align-items-center justify-content-center rounded-circle mb-3 mx-auto" style="width: 50px; height: 50px; background-color: var(--heritage-green-pale); color: var(--heritage-green);">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" class="bi bi-sliders" viewBox="0 0 16 16">
+                      <path fill-rule="evenodd" d="M11.5 2a1.5 1.5 0 1 0 0 3 1.5 1.5 0 0 0 0-3M9.05 3a2.5 2.5 0 0 1 4.9 0H16v1h-2.05a2.5 2.5 0 0 1-4.9 0H0V3zM4.5 7a1.5 1.5 0 1 0 0 3 1.5 1.5 0 0 0 0-3M2.05 8a2.5 2.5 0 0 1 4.9 0H16v1H6.95a2.5 2.5 0 0 1-4.9 0H0V8zm9.45 4a1.5 1.5 0 1 0 0 3 1.5 1.5 0 0 0 0-3m-2.45 1a2.5 2.5 0 0 1 4.9 0H16v1h-2.05a2.5 2.5 0 0 1-4.9 0H0v-1z"/>
+                    </svg>
+                </div>
+                <h5 class="fw-bold mb-2">2. 조건 필터 설정</h5>
+                <p class="text-muted small mb-0" style="color: var(--text-secondary) !important;">
+                    점심시간, 아침 수업 피하기, 특정 요일 공강 등 원하는 다양한 조건들을 실시간으로 설정합니다.
+                </p>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card p-4 border-0 h-100 text-center" style="border-radius: 16px; background-color: var(--surface-white); box-shadow: var(--card-shadow);">
+                <div class="d-inline-flex align-items-center justify-content-center rounded-circle mb-3 mx-auto" style="width: 50px; height: 50px; background-color: var(--heritage-green-pale); color: var(--heritage-green);">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" class="bi bi-calendar3" viewBox="0 0 16 16">
+                      <path d="M14 0H2a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V2a2 2 0 0 0-2-2M1 3.857C1 3.384 1.448 3 2 3h12c.552 0 1 .384 1 .857v10.286c0 .473-.448.857-1 .857H2c-.552 0-1-.384-1-.857z"/>
+                      <path d="M6.5 7a1 1 0 1 0 0-2 1 1 0 0 0 0 2m3 0a1 1 0 1 0 0-2 1 1 0 0 0 0 2m3 0a1 1 0 1 0 0-2 1 1 0 0 0 0 2m-9 3a1 1 0 1 0 0-2 1 1 0 0 0 0 2m3 0a1 1 0 1 0 0-2 1 1 0 0 0 0 2m3 0a1 1 0 1 0 0-2 1 1 0 0 0 0 2m3 0a1 1 0 1 0 0-2 1 1 0 0 0 0 2m-9 3a1 1 0 1 0 0-2 1 1 0 0 0 0 2m3 0a1 1 0 1 0 0-2 1 1 0 0 0 0 2m3 0a1 1 0 1 0 0-2 1 1 0 0 0 0 2"/>
+                    </svg>
+                </div>
+                <h5 class="fw-bold mb-2">3. 시간표 확인</h5>
+                <p class="text-muted small mb-0" style="color: var(--text-secondary) !important;">
+                    겹치는 시간 없이 자동으로 조합된 수십 개의 최적 시간표 중 마음에 드는 구성을 고릅니다.
+                </p>
+            </div>
+        </div>
+    </div>
+</div>
+
+@code {
+    private void StartPlanning()
+    {
+        NavManager.NavigateTo("courses");
+    }
+}

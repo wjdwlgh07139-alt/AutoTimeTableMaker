@@ -23,14 +23,38 @@ public class ScheduleStateService
     // Realtime Filters
     public bool useLunchBreak {get; set;}
     public bool useMorningFilter {get; set;}
-    public bool useNoFriday{get; set;}    
+    public bool useNoDayFilter {get; set;}
+    public HashSet<CoreDay> NoDays { get; } = new HashSet<CoreDay>();
+
+    public void ToggleNoDay(CoreDay day)
+    {
+        if (NoDays.Contains(day))
+            NoDays.Remove(day);
+        else
+            NoDays.Add(day);
+    }
     public bool useMaxConsecutive{get; set;}
     public int maxConsecutiveHours {get; set;} = 5; // MaxConsecutiveFilter 기본값
 
     public bool useBreakTimeFilter {get; set;}
-    public CoreDay breakTimeDay {get; set;} = CoreDay.월; // BreakTimeFilter 기본 요일 (월)
-    public int breakTimeStartHour {get; set;} = 7; // BreakTimeFilter 기본 시작 시간 (점심시간 12:00에 해당하는 시간 인덱스)
-    public int breakTimeEndHour {get; set;} = 9;   // BreakTimeFilter 기본 종료 시간 (점심시간 13:00에 해당하는 시간 인덱스)
+    public CoreDay tempBreakTimeDay {get; set;} = CoreDay.월;
+    public int tempBreakTimeStartHour {get; set;} = 12;
+    public int tempBreakTimeEndHour {get; set;} = 13;
+    public List<BreakTimeRule> BreakTimeRules { get; } = new List<BreakTimeRule>();
+
+    public void AddBreakTimeRule(CoreDay day, int start, int end)
+    {
+        if (start >= end) return;
+        if (!BreakTimeRules.Any(r => r.Day == day && r.StartHour == start && r.EndHour == end))
+        {
+            BreakTimeRules.Add(new BreakTimeRule { Day = day, StartHour = start, EndHour = end });
+        }
+    }
+
+    public void RemoveBreakTimeRule(Guid id)
+    {
+        BreakTimeRules.RemoveAll(r => r.Id == id);
+    }
 
     // Final Filters
     public bool useIdleTimeFilter {get; set;} = false;
@@ -70,4 +94,42 @@ public class ScheduleStateService
     public bool IsSelected(Course course) => SelectedCourses.Contains(course);
 
     public void Clear() => SelectedCourses.Clear();
+
+    // --- 시간표 선택 보관 상태 ---
+    public List<List<Course>> SelectedSchedules { get; } = new();
+
+    public void ToggleSelectSchedule(List<Course> schedule)
+    {
+        var match = SelectedSchedules.FirstOrDefault(s => IsSameSchedule(s, schedule));
+        if (match != null)
+        {
+            SelectedSchedules.Remove(match);
+        }
+        else
+        {
+            SelectedSchedules.Add(schedule);
+        }
+        OnStateChanged?.Invoke();
+    }
+
+    public bool IsScheduleSelected(List<Course> schedule)
+    {
+        return SelectedSchedules.Any(s => IsSameSchedule(s, schedule));
+    }
+
+    private bool IsSameSchedule(List<Course> s1, List<Course> s2)
+    {
+        if (s1.Count != s2.Count) return false;
+        var set1 = s1.Select(c => c.ClassNumber).ToHashSet();
+        return s2.All(c => set1.Contains(c.ClassNumber));
+    }
+}
+
+public class BreakTimeRule
+{
+    public Guid Id { get; } = Guid.NewGuid();
+    public CoreDay Day { get; set; }
+    public int StartHour { get; set; }
+    public int EndHour { get; set; }
+    public string DisplayText => $"{Day}요일 {StartHour}시 ~ {EndHour}시";
 }

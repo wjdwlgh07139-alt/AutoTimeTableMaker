@@ -1,23 +1,28 @@
 @using WebASMTimeTabler.Core
 @using Microsoft.AspNetCore.Components
 
-<tr @key="Course.ClassNumber" class="@GetSelectedClass()">
-    <td>
-        <input type="checkbox" checked="@IsSelected" @onclick="ToggleCourse" />
+<tr @key="Course.ClassNumber" 
+    style="border-bottom: 1px solid var(--border-color); 
+           color: #0E201C; 
+           font-size: 0.88rem; 
+           font-weight: 500;
+           background-color: @(IsSelected ? "#D2E8E1" : "transparent");">
+    <td style="padding: 12px 0;">
+        <input type="checkbox" class="form-check-input" checked="@IsSelected" @onclick="ToggleCourse" style="cursor: pointer; border-color: var(--heritage-green-light);" />
     </td>
-    <td>@Course.Grade</td>
-    <td>@Course.Credit</td>
-    <td>@Course.CourseID</td>
-    <td>@Course.CourseNumber</td>
-    <td>@Course.Division</td>
-    <td>@Course.ClassNumber</td>
-    <td>@string.Join(", ", Course.Times)</td>
-    <td>@Course.Name</td>
-    <td>
+    <td style="padding: 12px 0;">@Course.Grade</td>
+    <td style="padding: 12px 0;">@Course.Credit</td>
+    <td style="padding: 12px 0; font-family: monospace; font-size: 0.82rem;">@Course.CourseID</td>
+    <td style="padding: 12px 0; font-family: monospace; font-size: 0.82rem;">@Course.CourseNumber</td>
+    <td style="padding: 12px 0;">@Course.Division</td>
+    <td style="padding: 12px 0; font-family: monospace; font-size: 0.82rem;">@Course.ClassNumber</td>
+    <td class="text-start" style="font-size: 0.82rem; color: #405753; padding: 12px 0 12px 6px;">@string.Join(", ", Course.Times)</td>
+    <td class="text-start fw-semibold" style="color: var(--heritage-green); padding: 12px 0 12px 6px;">@Course.Name</td>
+    <td style="padding: 12px 0;">
         @if (HasMultipleProfessors)
         {
-            <span @onclick="ToggleProfessorPopup" style="cursor:pointer; text-decoration:underline; color:blue;">
-                @FirstProfessor <span style="font-size:0.8em;">외</span>
+            <span @onclick="ToggleProfessorPopup" style="cursor:pointer; text-decoration:underline; color:var(--heritage-green-light); font-weight: 600;">
+                @FirstProfessor <span style="font-size:0.8em; color: var(--text-secondary); text-decoration: none; font-weight: normal;">외</span>
             </span>
             <CourseProfessorPopup Course="Course" Visible="showProfessorPopup" OnClose="CloseProfessorPopup" />
         }
@@ -26,7 +31,7 @@
             @Course.Professor
         }
     </td>
-    <td>@Course.Time</td>
+    <td style="padding: 12px 0;">@Course.Time</td>
 </tr>
 
 @code{

@@ -20,18 +20,18 @@ public interface IRealtimeFilter
 public class LunchBreakFilter : IRealtimeFilter
 {
     private readonly (int start, int end) lunchTime;
-    public LunchBreakFilter() : this((12, 13)){}
+    public LunchBreakFilter() : this((7, 8)){} // 12:00~13:00는 슬롯 인덱스 7~8
     public LunchBreakFilter((int start, int end) lunchTime)
     {
-        if (lunchTime.start < 0 || lunchTime.start > 24 || lunchTime.end < 0 || lunchTime.end > 24 || lunchTime.start >= lunchTime.end)
-            throw new ArgumentException("점심시간은 0부터 24 사이의 값이어야 하며, 시작 시간이 종료 시간보다 작아야 합니다.");
+        if (lunchTime.start < 1 || lunchTime.start > 23 || lunchTime.end < 1 || lunchTime.end > 23 || lunchTime.start > lunchTime.end)
+            throw new ArgumentException("점심시간 슬롯 인덱스는 1부터 23 사이의 값이어야 하며, 시작 인덱스가 종료 인덱스보다 작거나 같아야 합니다.");
         this.lunchTime = lunchTime;
     }
 
     public bool Apply(Course nextCourse, HashSet<(DayOfWeek day, int hour)> occupiedSlots)
     {
-        // nextCourse만으로도 점심시간 침범 여부 판단
-        return !nextCourse.Times.Any(t => t.start < lunchTime.end && t.end > lunchTime.start);
+        // 겹침 공식: [t.start, t.end] 와 [lunchTime.start, lunchTime.end] 가 겹치는지 검사
+        return !nextCourse.Times.Any(t => t.end >= lunchTime.start && t.start <= lunchTime.end);
     }
 }
 // 특정 요일, 특정 시간대에 수업이 없도록 강제하는 필터
@@ -51,16 +51,16 @@ public class BreakTimeFilter : IRealtimeFilter
         }
         else
         {
-            this._timeRange = (0, 24);
+            this._timeRange = (1, 23);
         }
-        if (_timeRange.start < 0 || _timeRange.start > 24 || _timeRange.end < 0 || _timeRange.end > 24 || _timeRange.start >= _timeRange.end)
-            throw new ArgumentException("시간대는 0부터 24 사이의 값이어야 하며, 시작 시간이 종료 시간보다 작아야 합니다.");
+        if (_timeRange.start < 1 || _timeRange.start > 23 || _timeRange.end < 1 || _timeRange.end > 23 || _timeRange.start > _timeRange.end)
+            throw new ArgumentException("시간대 슬롯 인덱스는 1부터 23 사이의 값이어야 하며, 시작 인덱스가 종료 인덱스보다 작거나 같아야 합니다.");
     }
 
     public bool Apply(Course nextCourse, HashSet<(DayOfWeek day, int hour)> occupiedSlots)
     {
-        // nextCourse만으로도 해당 요일, 시간대 침범 여부 판단
-        return !nextCourse.Times.Any(t => t.day == day && t.start < _timeRange.end && t.end > _timeRange.start);
+        // 겹침 공식: [t.start, t.end] 와 [_timeRange.start, _timeRange.end] 가 요일이 일치하면서 겹치는지 검사
+        return !nextCourse.Times.Any(t => t.day == day && t.end >= _timeRange.start && t.start <= _timeRange.end);
     }
 }
 

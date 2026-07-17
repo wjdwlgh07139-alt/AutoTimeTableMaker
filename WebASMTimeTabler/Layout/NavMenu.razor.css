@@ -1,36 +1,52 @@
 .navbar-toggler {
-    background-color: rgba(255, 255, 255, 0.1);
+    background-color: transparent;
+    border: 1px solid var(--border-color);
+    padding: 0.25rem 0.6rem;
+}
+
+/* 모바일 햄버거 삼선 메뉴 아이콘 색상을 헤리티지 그린 톤으로 설정 */
+.navbar-toggler-icon {
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='30' height='30' viewBox='0 0 30 30'%3E%3Cpath stroke='%23124E3F' stroke-width='2' stroke-linecap='round' stroke-miterlimit='10' d='M4 7h22M4 15h22M4 23h22'/%3E%3C/svg%3E") !important;
 }
 
 .top-row {
     height: 3.5rem;
-    background-color: rgba(0,0,0,0.4);
+    background-color: transparent;
+    border-bottom: 1px solid var(--border-color);
 }
 
 .navbar-brand {
-    font-size: 1.1rem;
+    font-size: 1.15rem;
+    font-weight: 600;
+    letter-spacing: -0.5px;
+    color: var(--heritage-green) !important;
 }
 
-.bi {
+/* Blazor CSS Isolation에 맞춰 ::deep 기법을 정확하게 적용 */
+::deep .bi {
     display: inline-block;
     position: relative;
     width: 1.25rem;
     height: 1.25rem;
-    margin-right: 0.75rem;
     top: -1px;
     background-size: cover;
+    flex-shrink: 0;
 }
 
-.bi-house-door-fill-nav-menu {
-    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' fill='white' class='bi bi-house-door-fill' viewBox='0 0 16 16'%3E%3Cpath d='M6.5 14.5v-3.505c0-.245.25-.495.5-.495h2c.25 0 .5.25.5.5v3.5a.5.5 0 0 0 .5.5h4a.5.5 0 0 0 .5-.5v-7a.5.5 0 0 0-.146-.354L13 5.793V2.5a.5.5 0 0 0-.5-.5h-1a.5.5 0 0 0-.5.5v1.293L8.354 1.146a.5.5 0 0 0-.708 0l-6 6A.5.5 0 0 0 1.5 7.5v7a.5.5 0 0 0 .5.5h4a.5.5 0 0 0 .5-.5Z'/%3E%3C/svg%3E");
+::deep .bi-house-door-fill-nav-menu {
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' fill='%23124E3F' class='bi bi-house-door-fill' viewBox='0 0 16 16'%3E%3Cpath d='M6.5 14.5v-3.505c0-.245.25-.495.5-.495h2c.25 0 .5.25.5.5v3.5a.5.5 0 0 0 .5.5h4a.5.5 0 0 0 .5-.5v-7a.5.5 0 0 0-.146-.354L13 5.793V2.5a.5.5 0 0 0-.5-.5h-1a.5.5 0 0 0-.5.5v1.293L8.354 1.146a.5.5 0 0 0-.708 0l-6 6A.5.5 0 0 0 1.5 7.5v7a.5.5 0 0 0 .5.5h4a.5.5 0 0 0 .5-.5Z'/%3E%3C/svg%3E");
 }
 
-.bi-plus-square-fill-nav-menu {
-    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' fill='white' class='bi bi-plus-square-fill' viewBox='0 0 16 16'%3E%3Cpath d='M2 0a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V2a2 2 0 0 0-2-2H2zm6.5 4.5v3h3a.5.5 0 0 1 0 1h-3v3a.5.5 0 0 1-1 0v-3h-3a.5.5 0 0 1 0-1h3v-3a.5.5 0 0 1 1 0z'/%3E%3C/svg%3E");
+::deep .bi-plus-square-fill-nav-menu {
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' fill='%23124E3F' class='bi bi-plus-square-fill' viewBox='0 0 16 16'%3E%3Cpath d='M2 0a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V2a2 2 0 0 0-2-2H2zm6.5 4.5v3h3a.5.5 0 0 1 0 1h-3v3a.5.5 0 0 1-1 0v-3h-3a.5.5 0 0 1 0-1h3v-3a.5.5 0 0 1 1 0z'/%3E%3C/svg%3E");
 }
 
-.bi-list-nested-nav-menu {
-    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' fill='white' class='bi bi-list-nested' viewBox='0 0 16 16'%3E%3Cpath fill-rule='evenodd' d='M4.5 11.5A.5.5 0 0 1 5 11h10a.5.5 0 0 1 0 1H5a.5.5 0 0 1-.5-.5zm-2-4A.5.5 0 0 1 3 7h10a.5.5 0 0 1 0 1H3a.5.5 0 0 1-.5-.5zm-2-4A.5.5 0 0 1 1 3h10a.5.5 0 0 1 0 1H1a.5.5 0 0 1-.5-.5z'/%3E%3C/svg%3E");
+::deep .bi-list-nested-nav-menu {
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' fill='%23124E3F' class='bi bi-list-nested' viewBox='0 0 16 16'%3E%3Cpath fill-rule='evenodd' d='M4.5 11.5A.5.5 0 0 1 5 11h10a.5.5 0 0 1 0 1H5a.5.5 0 0 1-.5-.5zm-2-4A.5.5 0 0 1 3 7h10a.5.5 0 0 1 0 1H3a.5.5 0 0 1-.5-.5zm-2-4A.5.5 0 0 1 1 3h10a.5.5 0 0 1 0 1H1a.5.5 0 0 1-.5-.5z'/%3E%3C/svg%3E");
+}
+
+::deep .bi-calendar-check-nav-menu {
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' fill='%23124E3F' class='bi bi-calendar-check-fill' viewBox='0 0 16 16'%3E%3Cpath d='M4 .5a.5.5 0 0 0-1 0V1H2a2 2 0 0 0-2 2v1h16V3a2 2 0 0 0-2-2h-1V.5a.5.5 0 0 0-1 0V1H4zM16 14a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2V5h16zm-5.146-5.146a.5.5 0 0 0-.708-.708L7.5 10.793 6.354 9.646a.5.5 0 1 0-.708.708l1.5 1.5a.5.5 0 0 0 .708 0z'/%3E%3C/svg%3E");
 }
 
 .nav-item {
@@ -46,38 +62,114 @@
         padding-bottom: 1rem;
     }
 
+    /* 기본 공통 링크 스타일 정의 */
     .nav-item ::deep a {
-        color: #d7d7d7;
-        border-radius: 4px;
+        color: var(--text-primary) !important;
+        border-radius: 8px;
         height: 3rem;
         display: flex;
         align-items: center;
         line-height: 3rem;
+        margin: 0 0.5rem;
+        transition: all 0.2s ease;
     }
 
-.nav-item ::deep a.active {
-    background-color: rgba(255,255,255,0.37);
-    color: white;
+    .nav-item ::deep a.active {
+        background-color: var(--heritage-green-pale) !important;
+        color: var(--heritage-green) !important;
+        font-weight: 600;
+        box-shadow: inset 4px 0 0 var(--heritage-green);
+    }
+
+    .nav-item ::deep a:hover {
+        background-color: rgba(18, 78, 63, 0.05) !important;
+        color: var(--heritage-green) !important;
+    }
+
+/* 브랜드 로고 롱/숏 버전 제어 */
+.brand-short {
+    display: none;
+}
+.brand-long {
+    display: inline;
 }
 
-.nav-item ::deep a:hover {
-    background-color: rgba(255,255,255,0.1);
-    color: white;
+/* ==========================================================================
+   모바일 환경 (max-width: 640.98px)
+   - 모바일 탑바 메뉴에서는 글자가 아이콘 옆에 항상 보여야 하며 좌측 정렬됩니다.
+   ========================================================================== */
+@media (max-width: 640.98px) {
+    .brand-short {
+        display: none;
+    }
+    .brand-long {
+        display: inline;
+    }
+
+    /* 모바일에서는 아이콘과 텍스트 마진이 항상 선명히 존재 */
+    .nav-item ::deep a {
+        padding-left: 1.5rem !important;
+        justify-content: flex-start !important;
+    }
+
+    .nav-item ::deep .bi {
+        margin-right: 0.8rem !important;
+    }
+
+    /* 모바일에서는 텍스트 감춤 속성을 비활성화하여 항상 글자로 설명되도록 함 */
+    .nav-item ::deep .nav-text {
+        opacity: 1 !important;
+        max-width: none !important;
+        display: inline !important;
+        margin-left: 0.5rem !important;
+    }
 }
 
+/* ==========================================================================
+   데스크톱 환경 (min-width: 641px)
+   - 평소에는 아이콘만 가운데 오고, 호버 시 오른쪽으로 텍스트 글자가 나타납니다.
+   ========================================================================== */
 @media (min-width: 641px) {
     .navbar-toggler {
         display: none;
     }
 
     .collapse {
-        /* Never collapse the sidebar for wide screens */
         display: block;
     }
     
     .nav-scrollable {
-        /* Allow sidebar to scroll for tall menus */
         height: calc(100vh - 3.5rem);
         overflow-y: auto;
+    }
+
+    /* 상시 긴 로고(AutoTimeTabler)를 표기 */
+    .brand-long {
+        display: inline !important;
+        font-weight: 600;
+        color: var(--heritage-green);
+    }
+    .brand-short {
+        display: none !important;
+    }
+
+    /* 링크 레이아웃: 항상 좌측 정렬 및 설명 텍스트와 정밀 정렬 */
+    .nav-item ::deep a {
+        padding-left: 1.5rem !important;
+        margin: 0 0.5rem !important;
+        justify-content: flex-start !important;
+    }
+
+    /* 아이콘 옆 마진 상시 노출 */
+    ::deep .bi {
+        margin-right: 0.8rem !important;
+    }
+
+    /* 설명 텍스트 상시 표시 */
+    .nav-item ::deep .nav-text {
+        opacity: 1 !important;
+        max-width: none !important;
+        display: inline-block !important;
+        margin-left: 0.5rem !important;
     }
 }
