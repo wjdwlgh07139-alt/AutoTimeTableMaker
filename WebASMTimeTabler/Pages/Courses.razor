@@ -7,6 +7,7 @@
 
 <PageTitle>강의 목록 - Timeship</PageTitle>
 
+<div style="padding-bottom: 7.5rem !important;">
 <h2 class="fw-bold mb-1" style="color: var(--heritage-green); letter-spacing: -0.5px;">강의 목록</h2>
 <p class="text-secondary small mb-4">수강하려는 과목을 선택하여 시간표 조합을 생성해 보세요.</p>
 
@@ -160,6 +161,22 @@ else
         </div>
     }
 }
+</div>
+
+<!-- 모바일 전용 플로팅 이동 버튼 그룹 (하단 중앙 정렬 고정) -->
+<div class="d-block d-md-none position-fixed" style="bottom: 1.5rem; left: 50%; transform: translateX(-50%); z-index: 1000; width: 90%; max-width: 320px;">
+    <div class="d-flex bg-white shadow-lg border rounded-pill p-1 align-items-center justify-content-between" style="box-shadow: 0 8px 30px rgba(0,0,0,0.12) !important;">
+        <button type="button" class="btn btn-sm border-0 rounded-pill fw-bold px-3.5 py-2 w-50 text-nowrap" 
+                style="font-size: 0.78rem; transition: all 0.2s; color: var(--heritage-green); background: transparent;" @onclick="GoToTimeTabler">
+            📅 시간표 확인
+        </button>
+        <div style="width: 1px; height: 16px; background-color: #dee2e6;"></div>
+        <button type="button" class="btn btn-sm border-0 rounded-pill fw-bold px-3.5 py-2 w-50 text-nowrap" 
+                style="font-size: 0.78rem; transition: all 0.2s; color: var(--heritage-green); background: transparent;" @onclick="GoToMySchedules">
+            🗃️ 내 시간표
+        </button>
+    </div>
+</div>
 
 @code {
 
@@ -294,5 +311,10 @@ else
         var roomStr = string.IsNullOrWhiteSpace(t.Room) ? "강의실 미지정" : t.Room;
 
         return $"{dayStr}, {startHourStr}~{endHourStr}, {roomStr}";
+    }
+
+    private void GoToMySchedules()
+    {
+        NavManager.NavigateTo("/myschedules");
     }
 }

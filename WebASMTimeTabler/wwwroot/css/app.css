@@ -313,6 +313,7 @@ code {
     width: 64px;
     height: 68px;
     min-width: 64px;
+    flex-shrink: 0; /* 캐러셀 스크롤 시 찌그러짐 방지 */
     background-color: #fafafa;
     border: 1.5px solid #e2e8f0;
     border-radius: 12px;
