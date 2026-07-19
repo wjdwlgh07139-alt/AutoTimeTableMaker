@@ -1,12 +1,21 @@
-<div class="top-row ps-3 navbar navbar-dark">
-    <div class="container-fluid d-flex justify-content-center justify-content-md-start">
+@inject IJSRuntime JS
+
+<div class="top-row navbar navbar-dark px-3">
+    <div class="container-fluid d-flex align-items-center justify-content-between justify-content-md-start p-0">
         <a class="navbar-brand text-nowrap" href="">
-            <span class="brand-short">ATT</span>
-            <span class="brand-long">AutoTimeTabler</span>
+            <span class="brand-short">TS</span>
+            <span class="brand-long">Timeship</span>
         </a>
-        <button title="Navigation menu" class="navbar-toggler" @onclick="ToggleNavMenu">
-            <span class="navbar-toggler-icon"></span>
-        </button>
+        <div class="d-flex align-items-center gap-2 d-md-none">
+            <button class="btn btn-sm btn-outline-warning fw-bold text-white border-0 px-2.5 py-1" 
+                    @onclick="ShowDonationPopup" 
+                    style="font-size: 0.8rem; background-color: rgba(255,193,7,0.25); border-radius: 8px; font-family: sans-serif;">
+                적선
+            </button>
+            <button title="Navigation menu" class="navbar-toggler" @onclick="ToggleNavMenu">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+        </div>
     </div>
 </div>
 
@@ -47,5 +56,10 @@
     private void ToggleNavMenu()
     {
         collapseNavMenu = !collapseNavMenu;
+    }
+
+    private async Task ShowDonationPopup()
+    {
+        await JS.InvokeVoidAsync("alert", "유용하게 쓰셨다면 서버비를 적선해주세요...\n국민 718202-01-290378 ㅈㅈㅎ");
     }
 }

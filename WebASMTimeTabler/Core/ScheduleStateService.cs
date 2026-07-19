@@ -12,6 +12,7 @@ public class ScheduleStateService
 
     // --- Courses 페이지 상태 ---
     public string SearchTerm { get; set; } = string.Empty;
+    public bool autoGenerateOnLoad { get; set; } = false;
     public HashSet<Course> SelectedCourses { get; } = new HashSet<Course>(new CourseComparer());
     public bool ShowSelectedCourses { get; set; } = false;
 

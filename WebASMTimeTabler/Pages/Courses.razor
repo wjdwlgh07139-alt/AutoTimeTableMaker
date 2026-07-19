@@ -5,7 +5,7 @@
 @inject NavigationManager NavManager
 @inject ScheduleStateService StateService
 
-<PageTitle>강의 목록 - AutoTimeTabler</PageTitle>
+<PageTitle>강의 목록 - Timeship</PageTitle>
 
 <h2 class="fw-bold mb-1" style="color: var(--heritage-green); letter-spacing: -0.5px;">강의 목록</h2>
 <p class="text-secondary small mb-4">수강하려는 과목을 선택하여 시간표 조합을 생성해 보세요.</p>
@@ -82,7 +82,8 @@ else
     }
     else
     {
-        <div class="card border-0 p-3" style="border-radius: 16px; box-shadow: var(--card-shadow); background-color: var(--surface-white); overflow-x: auto;">
+        <!-- 데스크탑 뷰: 테이블 구조 (Virtualize 포함) -->
+        <div class="d-none d-md-block card border-0 p-3" style="border-radius: 16px; box-shadow: var(--card-shadow); background-color: var(--surface-white); overflow-x: auto;">
             <table class="table text-center align-middle" style="table-layout: fixed; width: 100%; border: none; margin-bottom: 0;">
                 <thead>
                     <tr style="background-color: var(--heritage-green); color: var(--possibility-white);">
@@ -100,12 +101,62 @@ else
                     </tr>
                 </thead>
                 <tbody>
-                    <!-- 가상화 컴포넌트, 이놈이 자동으로 foreach 수행하고 보이는 부분만 렌더링함. OverscanCount 넉넉하게 잡아야 버벅거림 적음-->
                     <Virtualize Items="@filteredCourses" Context="course" ItemSize="53" OverscanCount="50">
                         <CourseItem @key="course.ClassNumber" Course="course" IsSelected="IsSelected(course)" OnToggleSelection="ToggleCourse" />
                     </Virtualize>
                 </tbody>
             </table>
+        </div>
+
+        <!-- 모바일 뷰: 카드형 리스트 구조 -->
+        <div class="d-block d-md-none" style="padding-bottom: 5rem;">
+            @foreach (var course in filteredCourses)
+            {
+                var isSel = IsSelected(course);
+                <div @key="course.ClassNumber" 
+                     class="card mb-3 p-3 border-0 transition-all text-start" 
+                     style="border-radius: 12px; 
+                            background-color: @(isSel ? "var(--heritage-green-pale)" : "var(--surface-white)"); 
+                            box-shadow: var(--card-shadow);
+                            cursor: pointer;
+                            border: 1px solid @(isSel ? "var(--heritage-green-light)" : "transparent") !important;"
+                     @onclick="() => ToggleCourse(course)">
+                    
+                    <div class="d-flex justify-content-between align-items-start mb-1">
+                        <div class="fw-bold text-dark" style="font-size: 0.95rem; line-height: 1.3;">
+                            @course.Name
+                        </div>
+                        <span class="badge rounded-pill fw-semibold border ms-2" 
+                              style="font-size: 0.7rem; 
+                                     background-color: @(isSel ? "var(--heritage-green)" : "var(--heritage-green-pale)"); 
+                                     color: @(isSel ? "var(--possibility-white)" : "var(--heritage-green)");
+                                     border-color: var(--heritage-green-light) !important;">
+                            @course.Division
+                        </span>
+                    </div>
+
+                    <div class="d-flex align-items-center gap-2 mb-2 text-secondary" style="font-size: 0.8rem;">
+                        <span class="fw-semibold text-dark">@course.Professor</span>
+                        <span>&middot;</span>
+                        <span>@(course.Grade)학년</span>
+                        <span>&middot;</span>
+                        <span>@(course.Credit)학점</span>
+                        <span>&middot;</span>
+                        <span class="font-monospace text-muted" style="font-size: 0.75rem;">@course.ClassNumber</span>
+                    </div>
+
+                    <div class="text-start" style="font-size: 0.78rem; color: var(--heritage-green-light); font-weight: 600;">
+                        @if (course.Times != null && course.Times.Count > 0)
+                        {
+                            <span>@string.Join(" / ", course.Times.Select(GetMobileFormattedTime))</span>
+                        }
+                        else
+                        {
+                            <span>@(string.IsNullOrWhiteSpace(course.Time) ? "시간 정보 없음" : course.Time)</span>
+                        }
+                    </div>
+                </div>
+            }
         </div>
     }
 }
@@ -210,6 +261,38 @@ else
 
     private void GoToTimeTabler()
     {
+        StateService.autoGenerateOnLoad = true;
         NavManager.NavigateTo("/timetable");
+    }
+
+    private string GetMobileFormattedTime(CourseTime t)
+    {
+        var dayStr = t.day switch
+        {
+            WebASMTimeTabler.Core.DayOfWeek.월 => "월",
+            WebASMTimeTabler.Core.DayOfWeek.화 => "화",
+            WebASMTimeTabler.Core.DayOfWeek.수 => "수",
+            WebASMTimeTabler.Core.DayOfWeek.목 => "목",
+            WebASMTimeTabler.Core.DayOfWeek.금 => "금",
+            WebASMTimeTabler.Core.DayOfWeek.토 => "토",
+            WebASMTimeTabler.Core.DayOfWeek.일 => "일",
+            WebASMTimeTabler.Core.DayOfWeek.e러닝 => "e러닝",
+            _ => "알수없음"
+        };
+
+        if (t.day == WebASMTimeTabler.Core.DayOfWeek.e러닝)
+        {
+            return "e러닝";
+        }
+
+        var startMin = 9 * 60 + (t.start - 1) * 30;
+        var endMin = 9 * 60 + (t.end - 1) * 30 + 30;
+
+        var startHourStr = $"{startMin / 60:D2}:{startMin % 60:D2}";
+        var endHourStr = $"{endMin / 60:D2}:{endMin % 60:D2}";
+
+        var roomStr = string.IsNullOrWhiteSpace(t.Room) ? "강의실 미지정" : t.Room;
+
+        return $"{dayStr}, {startHourStr}~{endHourStr}, {roomStr}";
     }
 }

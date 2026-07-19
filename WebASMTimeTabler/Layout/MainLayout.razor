@@ -1,12 +1,14 @@
-﻿@inherits LayoutComponentBase
+@inherits LayoutComponentBase
+@inject IJSRuntime JS
+
 <div class="page">
     <div class="sidebar">
         <NavMenu />
     </div>
 
     <main>
-        <div class="top-row px-4">
-            <a href="https://learn.microsoft.com/aspnet/core/" target="_blank">About</a>
+        <div class="top-row px-4 d-none d-md-flex">
+            <button class="btn btn-link text-decoration-none text-muted" @onclick="ShowDonationPopup" style="font-size: 0.9rem; padding: 0;">적선</button>
         </div>
 
         <article class="content px-4">
@@ -14,3 +16,10 @@
         </article>
     </main>
 </div>
+
+@code {
+    private async Task ShowDonationPopup()
+    {
+        await JS.InvokeVoidAsync("alert", "유용하게 쓰셨다면 서버비를 적선해주세요...\n국민 718202-01-290378 ㅈㅈㅎ");
+    }
+}

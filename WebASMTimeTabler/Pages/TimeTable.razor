@@ -2,12 +2,13 @@
 @using WebASMTimeTabler.Core
 @using CoreDay = WebASMTimeTabler.Core.DayOfWeek
 @inject ScheduleStateService StateService
+@inject NavigationManager NavManager
 
-<PageTitle>시간표</PageTitle>
-
+<PageTitle>시간표 - Timeship</PageTitle>
 
 <div class="d-flex gap-4 align-items-start">
-    <div class="card p-4 flex-shrink-0 border-0" style="width: 340px; border-radius: 16px; background-color: var(--surface-white); box-shadow: var(--card-shadow); font-size: 0.95rem; position: sticky; top: 5rem; z-index: 10;">
+    <!-- 데스크탑 뷰: 좌측 필터 설정 사이드바 (모바일에서는 d-none d-md-block 으로 숨김) -->
+    <div class="card p-4 flex-shrink-0 border-0 d-none d-md-block" style="width: 340px; border-radius: 16px; background-color: var(--surface-white); box-shadow: var(--card-shadow); font-size: 0.95rem; position: sticky; top: 5rem; z-index: 10;">
         <h5 class="fw-bold mb-3" style="color: var(--heritage-green); letter-spacing: -0.5px;">필터 설정</h5>
         
         <h6 class="fw-semibold text-secondary mt-2 mb-3" style="font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.5px;">실시간 필터 (Realtime)</h6>
@@ -84,7 +85,7 @@
                 @foreach (var rule in StateService.BreakTimeRules)
                 {
                     <div class="d-flex justify-content-between align-items-center mb-1 p-2 rounded transition-all" 
-                         style="font-size: 0.8rem; background-color: var(--heritage-green-pale); border: 1px solid var(--border-color); color: var(--text-primary);">
+                          style="font-size: 0.8rem; background-color: var(--heritage-green-pale); border: 1px solid var(--border-color); color: var(--text-primary);">
                         <span class="fw-medium">@rule.DisplayText</span>
                         <button type="button" class="btn btn-sm btn-link p-0 text-danger" style="font-size: 0.8rem; line-height: 1;" @onclick="() => StateService.RemoveBreakTimeRule(rule.Id)">
                             <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="currentColor" class="bi bi-trash3-fill" viewBox="0 0 16 16">
@@ -147,8 +148,19 @@
             }
         </button>
     </div>
-    <!-- 우측: 시간표 결과 패널 -->
+
+    <!-- 우측: 시간표 결과 패널 (데스크탑과 모바일 공통 세로 스크롤형 카드 레이아웃) -->
     <div class="flex-grow-1">
+        <!-- 모바일 전용 상단 단축 내비게이션 버튼 -->
+        <div class="d-flex d-md-none justify-content-between align-items-center gap-2 mb-3 px-2 py-2 bg-light rounded-3 border">
+            <button type="button" class="btn btn-sm btn-outline-success fw-semibold px-3 py-2 w-50" style="border-radius: 8px;" @onclick="GoToMySchedules">
+                내 시간표
+            </button>
+            <button type="button" class="btn btn-sm btn-outline-primary fw-semibold px-3 py-2 w-50" style="border-radius: 8px;" @onclick="GoToCourses">
+                과목 선택
+            </button>
+        </div>
+
         @if (StateService.generatedSchedules.Count == 0 && loading)
         {
             <p><em>시간표 생성 중...</em></p>
@@ -159,149 +171,317 @@
         }
         else
         {
-        @foreach (var (schedule, idx) in StateService.generatedSchedules.Select((s, i) => (s, i + 1)))
-        {
-            var courseStartLookup = new Dictionary<(string day, int hour), (Course Course, CourseTime Time)>();
-            var spannedSlots = new HashSet<(string day, int hour)>();
-            var excludedSlots = new Dictionary<(string day, int hour), string>();
-
-            if (StateService.useLunchBreak)
+            @foreach (var (schedule, idx) in StateService.generatedSchedules.Select((s, i) => (s, i + 1)))
             {
-                for (int h = 7; h <= 8; h++)
+                var activeDays = DaysOfWeek.ToList();
+                bool hasSat = schedule.Any(c => c.Times != null && c.Times.Any(t => t.day == WebASMTimeTabler.Core.DayOfWeek.토));
+                if (!hasSat)
                 {
-                    foreach (var d in DaysOfWeek)
-                    {
-                        excludedSlots[(d, h)] = "점심공강";
-                    }
+                    activeDays.Remove("토");
                 }
-            }
 
-            if (StateService.useNoDayFilter)
-            {
-                foreach (var day in StateService.NoDays)
+                var courseStartLookup = new Dictionary<(string day, int hour), (Course Course, CourseTime Time)>();
+                var spannedSlots = new HashSet<(string day, int hour)>();
+                var excludedSlots = new Dictionary<(string day, int hour), string>();
+
+                if (StateService.useLunchBreak)
                 {
-                    var dayStr = day.ToString();
-                    for (int h = StartHour; h <= EndHour; h++)
+                    for (int h = 7; h <= 8; h++)
                     {
-                        excludedSlots[(dayStr, h)] = "요일공강";
-                    }
-                }
-            }
-
-            if (StateService.useBreakTimeFilter)
-            {
-                foreach (var rule in StateService.BreakTimeRules)
-                {
-                    var dayStr = rule.Day.ToString();
-                    int startSlot = (rule.StartHour - 9) * 2 + 1;
-                    int endSlot = (rule.EndHour - 9) * 2;
-                    for (int h = startSlot; h <= endSlot; h++)
-                    {
-                        excludedSlots[(dayStr, h)] = "지정공강";
-                    }
-                }
-            }
-
-            foreach (var course in schedule)
-            {
-                foreach (var t in course.Times)
-                {
-                    var dayStr = t.day.ToString();
-                    courseStartLookup[(dayStr, t.start)] = (course, t);
-                    
-                    for (int h = t.start + 1; h <= t.end; h++)
-                    {
-                        spannedSlots.Add((dayStr, h));
-                    }
-                }
-            }
-
-            <div class="card my-4 p-4 border-0" style="border-radius: 16px; box-shadow: var(--card-shadow); background-color: var(--surface-white);">
-                <div class="d-flex justify-content-between align-items-center mb-3">
-                    <h5 class="fw-bold mb-0" style="color: var(--heritage-green); letter-spacing: -0.5px;">시간표 @idx</h5>
-                    @{
-                        var isSelected = StateService.IsScheduleSelected(schedule);
-                        <button type="button" class="btn btn-sm px-3 py-1.5 rounded-pill transition-all text-nowrap fw-semibold border-0"
-                                style="font-size: 0.8rem;
-                                       background-color: @(isSelected ? "var(--heritage-green)" : "var(--heritage-green-pale)");
-                                       color: @(isSelected ? "var(--possibility-white)" : "var(--text-primary)");
-                                       box-shadow: 0 2px 5px rgba(0,0,0,0.05);"
-                                @onclick="@(_ => StateService.ToggleSelectSchedule(schedule))">
-                            @if (isSelected)
-                            {
-                                <span>내 시간표에 담김 ✓</span>
-                            }
-                            else
-                            {
-                                <span>선택하기 +</span>
-                            }
-                        </button>
-                    }
-                </div>
-                <table class="table text-center align-middle" style="width: 100%; table-layout: fixed; border-collapse: separate; border-spacing: 4px; border: none; margin-bottom: 0;">
-                    <thead>
-                        <tr style="background-color: var(--heritage-green-pale); color: var(--heritage-green);">
-                            <th style="width: 85px; font-weight: 600; border: none; border-radius: 8px 0 0 8px; padding: 10px 0;">시간</th>
-                            @foreach (var day in DaysOfWeek)
-                            {
-                                var isLast = day == DaysOfWeek[^1];
-                                <th style="font-weight: 600; border: none; @(isLast ? "border-radius: 0 8px 8px 0;" : "") padding: 10px 0;">@day</th>
-                            }
-                        </tr>
-                    </thead>
-                    <tbody>
-                        @{
-                            var currentEndHour = GetMaxEndHour(schedule);
-                        }
-                        @for (int hour = StartHour; hour <= currentEndHour; hour++)
+                        foreach (var d in activeDays)
                         {
-                            <tr>
-                                @{
-                                    var totalMinutes = 9 * 60 + (hour - 1) * 30;
-                                    var displayHour = totalMinutes / 60;
-                                    var displayMinute = totalMinutes % 60;
-                                }
-                                <td style="font-weight: 500; font-size: 0.8rem; color: var(--text-secondary); background-color: var(--possibility-white); border: 1px solid var(--border-color); border-radius: 8px; padding: 6px 0;">
-                                    @($"{displayHour:D2}:{displayMinute:D2}")
-                                </td>
-                                @foreach (var day in DaysOfWeek)
-                                {
-                                    if (courseStartLookup.TryGetValue((day, hour), out var slot))
-                                    {
-                                        var color = GetCourseColor(slot.Course.Name);
-                                        <td rowspan="@(slot.Time.end - slot.Time.start + 1)" 
-                                            @onclick="@(_ => ShowCourseDetail(slot.Course))"
-                                            style="background-color:@color; color:#0e201c; font-weight:600; border-radius: 8px; border: none; box-shadow: 0 2px 8px rgba(0,0,0,0.05); font-size: 0.85rem; padding: 8px; cursor: pointer;"
-                                            class="course-cell-hover">
-                                            <div class="fw-bold text-truncate" title="@slot.Course.Name">@slot.Course.Name</div>
-                                            <div class="text-truncate" style="font-size: 0.72rem; opacity: 0.85; margin-top: 2px;">@slot.Course.Professor</div>
-                                            <div style="font-size: 0.68rem; opacity: 0.75; margin-top: 2px; font-family: monospace;">@slot.Course.ClassNumber</div>
-                                        </td>
-                                    }
-                                    else if (spannedSlots.Contains((day, hour)))
-                                    {
-                                        // 이미 위에서 렌더링된 셀에 포함되었으므로, 현재 <td>는 렌더링하지 않음
-                                    }
-                                    else if (excludedSlots.TryGetValue((day, hour), out var reason))
-                                    {
-                                        <td style="background-color: #F2F7F5; color: #839E98; font-size: 0.72rem; font-weight: 500; border-radius: 8px; border: 1px dashed var(--border-color); padding: 4px;">
-                                            @reason
-                                        </td>
-                                    }
-                                    else
-                                    {
-                                        <td style="background-color: transparent; border: 1px solid rgba(211, 226, 221, 0.4); border-radius: 8px; padding: 0;"></td>
-                                    }
-                                }
-                            </tr>
+                            excludedSlots[(d, h)] = "점심공강";
                         }
-                    </tbody>
-                </table>
-            </div>
-        }
+                    }
+                }
+
+                if (StateService.useNoDayFilter)
+                {
+                    foreach (var day in StateService.NoDays)
+                    {
+                        var dayStr = day.ToString();
+                        for (int h = StartHour; h <= EndHour; h++)
+                        {
+                            excludedSlots[(dayStr, h)] = "요일공강";
+                        }
+                    }
+                }
+
+                if (StateService.useBreakTimeFilter)
+                {
+                    foreach (var rule in StateService.BreakTimeRules)
+                    {
+                        var dayStr = rule.Day.ToString();
+                        int startSlot = (rule.StartHour - 9) * 2 + 1;
+                        int endSlot = (rule.EndHour - 9) * 2;
+                        for (int h = startSlot; h <= endSlot; h++)
+                        {
+                            excludedSlots[(dayStr, h)] = "지정공강";
+                        }
+                    }
+                }
+
+                foreach (var course in schedule)
+                {
+                    foreach (var t in course.Times)
+                    {
+                        var dayStr = t.day.ToString();
+                        courseStartLookup[(dayStr, t.start)] = (course, t);
+                        
+                        for (int h = t.start + 1; h <= t.end; h++)
+                        {
+                            spannedSlots.Add((dayStr, h));
+                        }
+                    }
+                }
+
+                <div class="card my-4 p-2 p-md-4 border-0" style="border-radius: 16px; box-shadow: var(--card-shadow); background-color: var(--surface-white);">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <h5 class="fw-bold mb-0" style="color: var(--heritage-green); letter-spacing: -0.5px;">시간표 @idx</h5>
+                        @{
+                            var isSelected = StateService.IsScheduleSelected(schedule);
+                            <button type="button" class="btn btn-sm px-3 py-1.5 rounded-pill transition-all text-nowrap fw-semibold border-0"
+                                    style="font-size: 0.8rem;
+                                           background-color: @(isSelected ? "var(--heritage-green)" : "var(--heritage-green-pale)");
+                                           color: @(isSelected ? "var(--possibility-white)" : "var(--text-primary)");
+                                           box-shadow: 0 2px 5px rgba(0,0,0,0.05);"
+                                    @onclick="@(_ => StateService.ToggleSelectSchedule(schedule))">
+                                @if (isSelected)
+                                {
+                                    <span>내 시간표에 담김 ✓</span>
+                                }
+                                else
+                                {
+                                    <span>선택하기 +</span>
+                                }
+                            </button>
+                        }
+                    </div>
+                    <div class="table-responsive">
+                        <table class="table text-center align-middle" style="width: 100%; table-layout: fixed; border-collapse: separate; border-spacing: 4px; border: none; margin-bottom: 0;">
+                            <thead>
+                                <tr style="background-color: var(--heritage-green-pale); color: var(--heritage-green);">
+                                    <th style="width: 85px; font-weight: 600; border: none; border-radius: 8px 0 0 8px; padding: 10px 0;">시간</th>
+                                    @foreach (var day in activeDays)
+                                    {
+                                        var isLast = day == activeDays[^1];
+                                        <th style="font-weight: 600; border: none; @(isLast ? "border-radius: 0 8px 8px 0;" : "") padding: 10px 0;">@day</th>
+                                    }
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @{
+                                    var currentEndHour = GetMaxEndHour(schedule);
+                                }
+                                @for (int hour = StartHour; hour <= currentEndHour; hour++)
+                                {
+                                    <tr>
+                                        @{
+                                            var totalMinutes = 9 * 60 + (hour - 1) * 30;
+                                            var displayHour = totalMinutes / 60;
+                                            var displayMinute = totalMinutes % 60;
+                                        }
+                                        <td style="font-weight: 500; font-size: 0.8rem; color: var(--text-secondary); background-color: var(--possibility-white); border: 1px solid var(--border-color); border-radius: 8px; padding: 6px 0;">
+                                            @($"{displayHour:D2}:{displayMinute:D2}")
+                                        </td>
+                                        @foreach (var day in activeDays)
+                                        {
+                                            if (courseStartLookup.TryGetValue((day, hour), out var slot))
+                                            {
+                                                var color = GetCourseColor(slot.Course.Name);
+                                                <td rowspan="@(slot.Time.end - slot.Time.start + 1)" 
+                                                    @onclick="@(_ => ShowCourseDetail(slot.Course))"
+                                                    style="background-color:@color; color:#0e201c; font-weight:600; border-radius: 8px; border: none; box-shadow: 0 2px 8px rgba(0,0,0,0.05); font-size: 0.85rem; padding: 8px; cursor: pointer;"
+                                                    class="course-cell-hover">
+                                                    <div class="fw-bold text-truncate" title="@slot.Course.Name">@slot.Course.Name</div>
+                                                    <div class="text-truncate" style="font-size: 0.72rem; opacity: 0.85; margin-top: 2px;">@slot.Course.Professor</div>
+                                                    <div style="font-size: 0.68rem; opacity: 0.75; margin-top: 2px; font-family: monospace;">@slot.Course.ClassNumber</div>
+                                                </td>
+                                            }
+                                            else if (spannedSlots.Contains((day, hour)))
+                                            {
+                                                // 이미 위에서 렌더링된 셀에 포함되었으므로, 현재 <td>는 렌더링하지 않음
+                                            }
+                                            else if (excludedSlots.TryGetValue((day, hour), out var reason))
+                                            {
+                                                <td style="background-color: #F2F7F5; color: #839E98; font-size: 0.72rem; font-weight: 500; border-radius: 8px; border: 1px dashed var(--border-color); padding: 4px;">
+                                                    @reason
+                                                </td>
+                                            }
+                                            else
+                                            {
+                                                <td style="background-color: transparent; border: 1px solid rgba(211, 226, 221, 0.4); border-radius: 8px; padding: 0;"></td>
+                                            }
+                                        }
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            }
         }
     </div>
 </div>
+
+<!-- 모바일 전용 플로팅 필터 설정 버튼 (스크롤 시에도 화면 우측 하단에 고정) -->
+<div class="d-block d-md-none position-fixed" style="bottom: 2rem; right: 1.5rem; z-index: 999;">
+    <button type="button"
+            class="btn btn-primary shadow-lg d-flex align-items-center gap-2 px-4 py-3 rounded-pill fw-bold"
+            @onclick="ToggleMobileFilter"
+            style="border-radius: 50px; background-color: var(--heritage-green); border: none; box-shadow: 0 4px 20px rgba(18, 78, 63, 0.3) !important; color: white;">
+        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="currentColor" class="bi bi-sliders" viewBox="0 0 16 16">
+            <path fill-rule="evenodd" d="M11.5 2a1.5 1.5 0 1 0 0 3 1.5 1.5 0 0 0 0-3M9.05 3a2.5 2.5 0 0 1 4.9 0H16v1h-2.05a2.5 2.5 0 0 1-4.9 0H0V3zM4.5 7a1.5 1.5 0 1 0 0 3 1.5 1.5 0 0 0 0-3M2.05 8a2.5 2.5 0 0 1 4.9 0H16v1H6.95a2.5 2.5 0 0 1-4.9 0H0V8zm9.45 4a1.5 1.5 0 1 0 0 3 1.5 1.5 0 0 0 0-3m-2.45 1a2.5 2.5 0 0 1 4.9 0H16v1h-2.05a2.5 2.5 0 0 1-4.9 0H0v-1z" />
+        </svg>
+        <span>필터 설정</span>
+    </button>
+</div>
+
+<!-- 모바일 전용 필터 모달 팝업 -->
+@if (showMobileFilterModal)
+{
+    <div class="custom-modal-backdrop" @onclick="ToggleMobileFilter"
+         style="z-index: 1050; display: flex; align-items: center; justify-content: center; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background-color: rgba(0,0,0,0.5);">
+        <div class="custom-modal-content p-4" @onclick:stopPropagation
+             style="max-height: 85vh; overflow-y: auto; width: 90%; max-width: 400px; border-radius: 20px; background-color: white; box-shadow: 0 10px 40px rgba(0,0,0,0.2);">
+            <div class="d-flex justify-content-between align-items-center mb-3 border-bottom pb-2">
+                <h5 class="fw-bold mb-0" style="color: var(--heritage-green);">필터 설정</h5>
+                <button type="button" class="btn-close" @onclick="ToggleMobileFilter" aria-label="Close"
+                        style="border: none; background: transparent; font-size: 1.5rem; line-height: 1; padding: 0;">&times;</button>
+            </div>
+
+            <h6 class="fw-semibold text-secondary mt-2 mb-3" style="font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.5px;">실시간 필터 (Realtime)</h6>
+
+            <div class="form-check mb-2 d-flex align-items-center gap-2">
+                <input type="checkbox" class="form-check-input m-0" id="lunchBreak_m" @bind="StateService.useLunchBreak" style="cursor: pointer;">
+                <label class="form-check-label" for="lunchBreak_m" style="cursor: pointer;">점심시간 공강 (12:00-13:00)</label>
+            </div>
+
+            <div class="form-check mb-2 d-flex align-items-center gap-2">
+                <input type="checkbox" class="form-check-input m-0" id="morningFilter_m" @bind="StateService.useMorningFilter" style="cursor: pointer;">
+                <label class="form-check-label" for="morningFilter_m" style="cursor: pointer;">아침 수업 금지 (10시 이전)</label>
+            </div>
+
+            <div class="form-check mb-2 d-flex align-items-center gap-2">
+                <input type="checkbox" class="form-check-input m-0" id="noDayFilter_m" @bind="StateService.useNoDayFilter" style="cursor: pointer;">
+                <label class="form-check-label" for="noDayFilter_m" style="cursor: pointer;">특정 요일 공강</label>
+            </div>
+            @if (StateService.useNoDayFilter)
+            {
+                <div class="ms-1 my-2 d-flex gap-1 flex-wrap">
+                    @foreach (var day in Enum.GetValues<CoreDay>().Where(d => d >= CoreDay.월 && d <= CoreDay.토))
+                    {
+                        var isChecked = StateService.NoDays.Contains(day);
+                        <button type="button" class="btn btn-sm px-2 py-1 rounded-pill border-0 transition-all text-nowrap"
+                                style="font-size: 0.8rem;
+                                       background-color: @(isChecked ? "var(--heritage-green)" : "var(--heritage-green-pale)");
+                                       color: @(isChecked ? "var(--possibility-white)" : "var(--text-primary)");
+                                       font-weight: 500;"
+                                @onclick="@(_ => StateService.ToggleNoDay(day))">
+                            @day.ToString()
+                        </button>
+                    }
+                </div>
+            }
+
+            <div class="form-check mb-2">
+                <div class="d-flex align-items-center gap-2">
+                    <input type="checkbox" class="form-check-input m-0" id="maxConsecutive_m" @bind="StateService.useMaxConsecutive" style="cursor: pointer;">
+                    <label class="form-check-label" for="maxConsecutive_m" style="cursor: pointer;">연강 제한 (최대 @StateService.maxConsecutiveHours 시간)</label>
+                </div>
+            </div>
+            <div class="ms-4 mb-2" style="display: @(StateService.useMaxConsecutive ? "block" : "none")">
+                <input type="number" class="form-control form-control-sm" @bind="StateService.maxConsecutiveHours" min="1" max="10" />
+            </div>
+
+            <div class="form-check mb-2">
+                <div class="d-flex align-items-center gap-2">
+                    <input type="checkbox" class="form-check-input m-0" id="breakTimeFilter_m" @bind="StateService.useBreakTimeFilter" style="cursor: pointer;">
+                    <label class="form-check-label" for="breakTimeFilter_m" style="cursor: pointer;">특정 시간대 공강</label>
+                </div>
+            </div>
+            <div class="ms-4 mb-2" style="display: @(StateService.useBreakTimeFilter ? "block" : "none")">
+                <div class="row g-1">
+                    <div class="col-4">
+                        <select class="form-select form-select-sm" @bind="StateService.tempBreakTimeDay">
+                            @foreach (var day in Enum.GetValues<CoreDay>().Where(d => d >= CoreDay.월 && d <= CoreDay.금))
+                            {
+                                <option value="@day">@day.ToString()</option>
+                            }
+                        </select>
+                    </div>
+                    <div class="col-3">
+                        <input type="number" class="form-control form-control-sm" @bind="StateService.tempBreakTimeStartHour" min="9" max="23" />
+                    </div>
+                    <div class="col-3">
+                        <input type="number" class="form-control form-control-sm" @bind="StateService.tempBreakTimeEndHour" min="9" max="24" />
+                    </div>
+                    <div class="col-2">
+                        <button type="button" class="btn btn-sm btn-outline-success w-100" style="padding: .25rem .25rem; font-weight: 500;" @onclick="AddBreakRule">추가</button>
+                    </div>
+                </div>
+                <div class="mt-2" style="max-height: 120px; overflow-y: auto;">
+                    @foreach (var rule in StateService.BreakTimeRules)
+                    {
+                        <div class="d-flex justify-content-between align-items-center mb-1 p-2 rounded" 
+                             style="font-size: 0.8rem; background-color: var(--heritage-green-pale); border: 1px solid var(--border-color); color: var(--text-primary);">
+                            <span class="fw-medium">@rule.DisplayText</span>
+                            <button type="button" class="btn btn-sm btn-link p-0 text-danger" style="font-size: 0.8rem; line-height: 1;" @onclick="() => StateService.RemoveBreakTimeRule(rule.Id)">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="currentColor" class="bi bi-trash3-fill" viewBox="0 0 16 16">
+                                  <path d="M11 1.5v1h3.5a.5.5 0 0 1 0 1h-.538l-.853 10.66A2 2 0 0 1 11.115 16h-6.23a2 2 0 0 1-1.994-1.84L2.038 3.5H1.5a.5.5 0 0 1 0-1H5v-1A1.5 1.5 0 0 1 6.5 0h3A1.5 1.5 0 0 1 11 1.5m-5 0v1h4v-1a.5.5 0 0 0-.5-.5h-3a.5.5 0 0 0-.5.5M4.5 5.029l.5 8.5a.5.5 0 1 0 .998-.06l-.5-8.5a.5.5 0 1 0-.998.06m6.53-.528a.5.5 0 0 0-.528.47l-.5 8.5a.5.5 0 0 0 .998.058l.5-8.5a.5.5 0 0 0-.47-.528M8 4.5a.5.5 0 0 0-.5.5v8.5a.5.5 0 0 0 1 0V5a.5.5 0 0 0-.5-.5"/>
+                                </svg>
+                            </button>
+                        </div>
+                    }
+                </div>
+            </div>
+
+            <hr style="border-top: 1px solid var(--border-color); opacity: 0.8;" />
+
+            <h6 class="fw-semibold text-secondary mt-2 mb-3" style="font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.5px;">최종 필터 (Final)</h6>
+
+            <div class="form-check mb-2">
+                <div class="d-flex align-items-center gap-2">
+                    <input type="checkbox" class="form-check-input m-0" id="idleTime_m" @bind="StateService.useIdleTimeFilter" style="cursor: pointer;">
+                    <label class="form-check-label" for="idleTime_m" style="cursor: pointer;">유휴시간 최소화 (최대 @StateService.maxIdleHours 시간)</label>
+                </div>
+            </div>
+            <div class="ms-4 mb-2" style="display: @(StateService.useIdleTimeFilter ? "block" : "none")">
+                <input type="number" class="form-control form-control-sm" @bind="StateService.maxIdleHours" min="1" max="5" />
+            </div>
+
+            <div class="form-check mb-2">
+                <div class="d-flex align-items-center gap-2">
+                    <input type="checkbox" class="form-check-input m-0" id="maxDailyCourses_m" @bind="StateService.useMaxDailyCourses" style="cursor: pointer;">
+                    <label class="form-check-label" for="maxDailyCourses_m" style="cursor: pointer;">하루 최대 수업 수 (@StateService.maxCoursesPerDay 개)</label>
+                </div>
+            </div>
+            <div class="ms-4 mb-2" style="display: @(StateService.useMaxDailyCourses ? "block" : "none")">
+                <input type="number" class="form-control form-control-sm" @bind="StateService.maxCoursesPerDay" min="1" max="10" />
+            </div>
+
+            <div class="form-check mb-2">
+                <div class="d-flex align-items-center gap-2">
+                    <input type="checkbox" class="form-check-input m-0" id="totalCredit_m" @bind="StateService.useTotalCreditFilter" style="cursor: pointer;">
+                    <label class="form-check-label" for="totalCredit_m" style="cursor: pointer;">총 학점 제한 (@StateService.minCredit ~ @StateService.maxCredit 학점)</label>
+                </div>
+            </div>
+            <div class="ms-4 mb-2 row" style="display: @(StateService.useTotalCreditFilter ? "flex" : "none")">
+                <div class="col-6">
+                    <input type="number" class="form-control form-control-sm" @bind="StateService.minCredit" min="0" />
+                </div>
+                <div class="col-6">
+                    <input type="number" class="form-control form-control-sm" @bind="StateService.maxCredit" min="@StateService.minCredit" />
+                </div>
+            </div>
+
+            <div class="custom-modal-footer p-3 border-top text-end mt-4">
+                <button type="button" class="btn px-4 py-2 rounded-pill fw-semibold border-0 text-white transition-all w-100"
+                        style="background-color: var(--heritage-green); font-size: 0.85rem;" @onclick="ApplyMobileFiltersAndClose">필터 적용 & 시간표 생성</button>
+            </div>
+        </div>
+    </div>
+}
 
 @if (selectedCourseForModal != null)
 {
@@ -369,14 +549,30 @@
 
 
 @code {
-    
+    protected override async Task OnInitializedAsync()
+    {
+        if (StateService.autoGenerateOnLoad)
+        {
+            StateService.autoGenerateOnLoad = false;
+            if (StateService.GroupedCourses.Count > 0)
+            {
+                await GenerateSchedules();
+            }
+        }
+    }
+
+    private bool showMobileFilterModal = false;
+    private void ToggleMobileFilter() => showMobileFilterModal = !showMobileFilterModal;
+    private async Task ApplyMobileFiltersAndClose()
+    {
+        showMobileFilterModal = false;
+        await GenerateSchedules();
+    }
 
     private static readonly string[] DaysOfWeek = { "월", "화", "수", "목", "금", "토" };
     private const int StartHour = 1;
     private const int EndHour = 18; // 기본 최대 시간 18:00 (슬롯 18)
     private bool loading = false;
-    
-
 
     // 랜덤 색상 저장용
     private Dictionary<string, string> courseColors = new();
@@ -450,14 +646,17 @@
         }
         return maxHour;
     }
+
     private void AddBreakRule()
     {
         StateService.AddBreakTimeRule(StateService.tempBreakTimeDay, StateService.tempBreakTimeStartHour, StateService.tempBreakTimeEndHour);
     }
+
     private async Task GenerateSchedules()
     {
         Console.WriteLine($"선택된 그룹 수: {StateService.GroupedCourses.Count}");
-        foreach(var group in StateService.GroupedCourses) {
+        foreach (var group in StateService.GroupedCourses)
+        {
             Console.WriteLine($"그룹: {group[0].Name}, 분반 수: {group.Count}");
         }
         loading = true;
@@ -469,7 +668,7 @@
         StateService.RealtimeFilters.Clear();
         StateService.RealtimeFilters.Add(new TimeConflictFilter());
         StateService.FinalFilters.Clear();
-        
+
         if (StateService.useLunchBreak) StateService.RealtimeFilters.Add(new LunchBreakFilter());
         if (StateService.useMorningFilter) StateService.RealtimeFilters.Add(new MorningFilter());
         if (StateService.useNoDayFilter)
@@ -479,7 +678,7 @@
                 StateService.RealtimeFilters.Add(new NoDayFilter(day));
             }
         }
-        
+
         if (StateService.useMaxConsecutive) StateService.RealtimeFilters.Add(new MaxConsecutiveFilter(StateService.maxConsecutiveHours));
         if (StateService.useBreakTimeFilter)
         {
@@ -495,7 +694,6 @@
         if (StateService.useMaxDailyCourses) StateService.FinalFilters.Add(new MaxDailyCoursesFilter(StateService.maxCoursesPerDay));
         if (StateService.useTotalCreditFilter) StateService.FinalFilters.Add(new TotalCreditFilter(StateService.minCredit, StateService.maxCredit));
 
-
         var service = new ScheduleService(
             maxPages: 50,
             realtimeFilters: StateService.RealtimeFilters,
@@ -507,14 +705,20 @@
         {
             StateService.generatedSchedules.Add(schedule);
             StateHasChanged(); // 결과가 나올 때마다 UI를 갱신
-
-            // ✅ 핵심: UI 스레드에 제어권을 잠시 넘겨줘서 멈춤 현상을 방지합니다.
             await Task.Delay(1);
         }
 
-        // 모든 작업이 끝난 후 loading 상태를 변경합니다.
-        //Console.WriteLine($"총 {generatedSchedules.Count}개의 시간표 생성됨."); // deguging
         loading = false;
         StateHasChanged();
+    }
+
+    private void GoToMySchedules()
+    {
+        NavManager.NavigateTo("/myschedules");
+    }
+
+    private void GoToCourses()
+    {
+        NavManager.NavigateTo("/courses");
     }
 }
